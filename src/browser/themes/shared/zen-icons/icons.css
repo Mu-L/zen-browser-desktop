@@ -1184,3 +1184,12 @@ menupopup > menuitem:is([type='checkbox']) .menu-iconic-left {
 #zen-media-pip-button {
   list-style-image: url('chrome://global/skin/media/picture-in-picture-open.svg') !important;
 }
+
+/* Tab folders */
+.tab-group-folder-icon {
+  list-style-image: url('folder-open.svg');
+
+  tab-group[collapsed] > .tab-group-label-container & {
+    list-style-image: url('folder-closed.svg');
+  }
+}

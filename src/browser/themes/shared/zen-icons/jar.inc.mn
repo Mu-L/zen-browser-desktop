@@ -401,4 +401,6 @@
   skin/classic/browser/zen-icons/zoom-control.svg                      (../shared/zen-icons/lin/zoom-control.svg) 
   skin/classic/browser/zen-icons/zoom-out.svg                      (../shared/zen-icons/lin/zoom-out.svg) 
 #endif
-    skin/classic/browser/zen-icons/icons.css                      (../shared/zen-icons/icons.css) 
+  skin/classic/browser/zen-icons/folder-closed.svg                      (../shared/zen-icons/common/folder-closed.svg) 
+  skin/classic/browser/zen-icons/folder-open.svg                      (../shared/zen-icons/common/folder-open.svg) 
+  skin/classic/browser/zen-icons/icons.css                      (../shared/zen-icons/icons.css) 

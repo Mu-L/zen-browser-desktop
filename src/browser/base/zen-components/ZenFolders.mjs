@@ -127,57 +127,79 @@
     }
 
     #onNewFolder(event) {
-      const group = gBrowser.addTabGroup([gBrowser.selectedTab], {
+      const group = gBrowser.addTabGroup(gBrowser.selectedTabs, {
         insertBefore: ZenWorkspaces.pinnedTabsContainer.querySelector('.vertical-pinned-tabs-container-separator'),
         label: 'New Folder',
       });
       group.pinned = true;
     }
 
-    #onTabGroupExpand(event) {}
-
     async #onTabGroupCollapse(event) {
+      const ANIMATION_DURATION = 0.2;
       const group = event.target;
-      const groupRect = group.getBoundingClientRect();
       const tabsContainer = group.querySelector('.tab-group-container');
       const animations = [];
-      let selectedTabHeight = 0;
-      for (const item of group.querySelector('.tab-group-container').children) {
-        if (item.hasAttribute('visuallyselected')) {
-          selectedTabHeight = item.getBoundingClientRect().height;
-          continue;
-        }
+      const groupStart = group.querySelector('.zen-tab-group-start');
+      let heightUntilSelected = 0;
+      let heightAfterSelected = 0;
+      let selectedItem = null;
+      for (const item of tabsContainer.children) {
         const rect = item.getBoundingClientRect();
-        // Calculate distance between the group label and the tab in order to animate
-        // the tab translating into it vertically
-        const translateY = groupRect.top - rect.top;
+        if (item.hasAttribute('visuallyselected')) {
+          heightAfterSelected += rect.height;
+          selectedItem = item;
+        } else if (!selectedItem) {
+          heightUntilSelected += rect.height;
+        }
+      }
+      animations.push(
+        gZenUIManager.motion.animate(
+          groupStart,
+          {
+            marginTop: [0, -heightUntilSelected],
+          },
+          {
+            duration: ANIMATION_DURATION,
+            ease: 'linear',
+          }
+        )
+      );
+      // TODO: animate the selected item
+      if (false) {
         animations.push(
           gZenUIManager.motion.animate(
-            item,
+            selectedItem,
             {
-              y: [0, translateY],
+              marginTop: [0, -heightAfterSelected],
             },
             {
-              duration: 0.2,
-              type: 'spring',
-              bounce: 0,
+              duration: ANIMATION_DURATION,
+              ease: 'linear',
             }
           )
         );
       }
-      animations.push(
-        gZenUIManager.motion.animate(
-          tabsContainer,
-          {
-            height: [groupRect.height, selectedTabHeight],
-          },
-          {
-            duration: 0.2,
-            type: 'spring',
-            bounce: 0,
-          }
-        )
-      );
+      await Promise.all(animations);
+    }
+
+    async #onTabGroupExpand(event) {
+      const group = event.target;
+      const tabsContainer = group.querySelector('.tab-group-container');
+      const animations = [];
+      for (const item of tabsContainer.children) {
+        animations.push(
+          gZenUIManager.motion.animate(
+            item,
+            {
+              marginTop: 0,
+            },
+            {
+              duration: 0.2,
+              ease: 'linear',
+            }
+          )
+        );
+      }
       await Promise.all(animations);
     }
   }

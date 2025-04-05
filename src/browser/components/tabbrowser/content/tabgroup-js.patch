@@ -1,19 +1,24 @@
 diff --git a/browser/components/tabbrowser/content/tabgroup.js b/browser/components/tabbrowser/content/tabgroup.js
-index 670fe2b309863102f63246e26194c8958e28bbb7..4cf64a3f4b04542ae8c792cf526b823e8c967953 100644
+index 670fe2b309863102f63246e26194c8958e28bbb7..88ec6eb101f6b2de6cbb4d3a43d4fbeea4158561 100644
 --- a/browser/components/tabbrowser/content/tabgroup.js
 +++ b/browser/components/tabbrowser/content/tabgroup.js
-@@ -12,7 +12,9 @@
-       <vbox class="tab-group-label-container" pack="center">
+@@ -9,10 +9,13 @@
+ {
+   class MozTabbrowserTabGroup extends MozXULElement {
+     static markup = `
+-      <vbox class="tab-group-label-container" pack="center">
++      <hbox class="tab-group-label-container" pack="center">
++        <image class="tab-group-folder-icon"/>
          <label class="tab-group-label" role="button"/>
++      </hbox>
++      <vbox class="tab-group-container">
++        <html:div class="zen-tab-group-start" />
        </vbox>
 -      <html:slot/>
-+      <vbox class="tab-group-container">
-+        <html:slot/>
-+      </vbox>
        `;
  
      /** @type {string} */
-@@ -213,7 +215,7 @@
+@@ -213,7 +216,7 @@
      }
  
      get tabs() {

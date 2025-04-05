@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tab.js b/browser/components/tabbrowser/content/tab.js
-index fc3a9730b394341843cfa9f559a792acb34c7d29..18d5fdb6e3368e21c68269c48cf22ac96fd868da 100644
+index fc3a9730b394341843cfa9f559a792acb34c7d29..04aeb2c246a2722224ee77284726363328ecc8d4 100644
 --- a/browser/components/tabbrowser/content/tab.js
 +++ b/browser/components/tabbrowser/content/tab.js
 @@ -16,6 +16,7 @@
@@ -48,6 +48,17 @@ index fc3a9730b394341843cfa9f559a792acb34c7d29..18d5fdb6e3368e21c68269c48cf22ac9
      }
  
      get lastAccessed() {
+@@ -351,8 +354,8 @@
+     }
+ 
+     get group() {
+-      if (this.parentElement?.tagName == "tab-group") {
+-        return this.parentElement;
++      if (this.parentElement?.parentElement?.tagName == "tab-group") {
++        return this.parentElement.parentElement;
+       }
+       return null;
+     }
 @@ -446,6 +449,8 @@
          this.style.MozUserFocus = "ignore";
        } else if (
