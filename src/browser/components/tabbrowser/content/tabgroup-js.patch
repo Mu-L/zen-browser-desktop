@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tabgroup.js b/browser/components/tabbrowser/content/tabgroup.js
-index 670fe2b309863102f63246e26194c8958e28bbb7..88ec6eb101f6b2de6cbb4d3a43d4fbeea4158561 100644
+index 670fe2b309863102f63246e26194c8958e28bbb7..692ef1f39ac9d9647034ff5f46f24881f963dc8e 100644
 --- a/browser/components/tabbrowser/content/tabgroup.js
 +++ b/browser/components/tabbrowser/content/tabgroup.js
 @@ -9,10 +9,13 @@
@@ -18,6 +18,15 @@ index 670fe2b309863102f63246e26194c8958e28bbb7..88ec6eb101f6b2de6cbb4d3a43d4fbee
        `;
  
      /** @type {string} */
+@@ -57,7 +60,7 @@
+       this.initializeAttributeInheritance();
+ 
+       this.#labelElement = this.querySelector(".tab-group-label");
+-      this.#labelElement.addEventListener("click", this);
++      this.querySelector(".tab-group-label-container").addEventListener("click", this);
+ 
+       this.#updateLabelAriaAttributes();
+       this.#updateCollapsedAriaAttributes();
 @@ -213,7 +216,7 @@
      }
  

@@ -148,7 +148,6 @@ tab-group:not([split-view-group]) {
   }
 
   & .tab-group-container {
-    overflow-y: hidden;
     padding-top: var(--tab-block-margin);
     padding-left: var(--zen-folder-indent, 0.5em);
 
@@ -156,9 +155,8 @@ tab-group:not([split-view-group]) {
       background: none !important;
     }
   }
-  margin: 2px 2px 2px 2px;
-  transition: max-height 0.75s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden !important;
+
+  margin: var(--tab-block-margin);
 
   & .tab-group-label-container {
     flex: 0 0 auto !important;
@@ -213,11 +211,9 @@ tab-group:not([split-view-group]) {
     & .tabbrowser-tab:not([hidden]) {
       display: flex;
     }
-  }
 
-  /* Expand when NOT collapsed */
-  &:not([collapsed]) {
-    overflow: scroll !important;
-    scrollbar-width: none !important;
+    & .tab-group-container {
+      overflow-y: hidden;
+    }
   }
 }

@@ -127,7 +127,11 @@
     }
 
     #onNewFolder(event) {
-      const group = gBrowser.addTabGroup(gBrowser.selectedTabs, {
+      const tabs = gBrowser.selectedTabs;
+      for (const tab of tabs) {
+        gBrowser.pinTab(tab);
+      }
+      const group = gBrowser.addTabGroup(tabs, {
         insertBefore: ZenWorkspaces.pinnedTabsContainer.querySelector('.vertical-pinned-tabs-container-separator'),
         label: 'New Folder',
       });
@@ -174,6 +178,7 @@
       const tabsContainer = group.querySelector('.tab-group-container');
       const groupStart = group.querySelector('.zen-tab-group-start');
       const animations = [];
+      tabsContainer.style.overflow = 'hidden';
       animations.push(
         gZenUIManager.motion.animate(
           groupStart,
@@ -187,6 +192,7 @@
         )
       );
       await Promise.all(animations);
+      tabsContainer.style.overflow = '';
     }
   }
 
