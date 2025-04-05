@@ -135,21 +135,22 @@
     }
 
     async #onTabGroupCollapse(event) {
-      const ANIMATION_DURATION = 0.2;
+      const ANIMATION_DURATION = 0.15;
       const group = event.target;
       const tabsContainer = group.querySelector('.tab-group-container');
       const animations = [];
       const groupStart = group.querySelector('.zen-tab-group-start');
       let heightUntilSelected = 0;
-      let heightAfterSelected = 0;
       let selectedItem = null;
+      let itemsAfterSelected = [];
       for (const item of tabsContainer.children) {
         const rect = item.getBoundingClientRect();
         if (item.hasAttribute('visuallyselected')) {
-          heightAfterSelected += rect.height;
           selectedItem = item;
         } else if (!selectedItem) {
           heightUntilSelected += rect.height;
+        } else {
+          itemsAfterSelected.push(item);
         }
       }
       animations.push(
@@ -164,42 +165,27 @@
           }
         )
       );
-      // TODO: animate the selected item
-      if (false) {
-        animations.push(
-          gZenUIManager.motion.animate(
-            selectedItem,
-            {
-              marginTop: [0, -heightAfterSelected],
-            },
-            {
-              duration: ANIMATION_DURATION,
-              ease: 'linear',
-            }
-          )
-        );
-      }
+      // TODO: Do the rest of the items after the selected item
       await Promise.all(animations);
     }
 
     async #onTabGroupExpand(event) {
       const group = event.target;
       const tabsContainer = group.querySelector('.tab-group-container');
+      const groupStart = group.querySelector('.zen-tab-group-start');
       const animations = [];
-      for (const item of tabsContainer.children) {
-        animations.push(
-          gZenUIManager.motion.animate(
-            item,
-            {
-              marginTop: 0,
-            },
-            {
-              duration: 0.2,
-              ease: 'linear',
-            }
-          )
-        );
-      }
+      animations.push(
+        gZenUIManager.motion.animate(
+          groupStart,
+          {
+            marginTop: 0,
+          },
+          {
+            duration: 0.15,
+            ease: 'linear',
+          }
+        )
+      );
       await Promise.all(animations);
     }
   }
