@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tabgroup.js b/browser/components/tabbrowser/content/tabgroup.js
-index 670fe2b309863102f63246e26194c8958e28bbb7..692ef1f39ac9d9647034ff5f46f24881f963dc8e 100644
+index 670fe2b309863102f63246e26194c8958e28bbb7..9585c7b8a2e35b29a7630fd6bd2e4a972a1700c7 100644
 --- a/browser/components/tabbrowser/content/tabgroup.js
 +++ b/browser/components/tabbrowser/content/tabgroup.js
 @@ -9,10 +9,13 @@
@@ -36,3 +36,12 @@ index 670fe2b309863102f63246e26194c8958e28bbb7..692ef1f39ac9d9647034ff5f46f24881
      }
  
      /**
+@@ -270,7 +273,7 @@
+      * @param {PointerEvent} event
+      */
+     on_click(event) {
+-      if (event.target === this.#labelElement && event.button === 0) {
++      if (event.target.closest('.tab-group-label-container') && event.button === 0) {
+         event.preventDefault();
+         this.collapsed = !this.collapsed;
+         gBrowser.tabGroupMenu.close();
