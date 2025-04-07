@@ -902,7 +902,9 @@ class ZenViewSplitter extends ZenDOMOperatedFeature {
   async onLocationChange(browser) {
     this.disableTabRearrangeView();
     let tab = window.gBrowser.getTabForBrowser(browser);
-    if (tab.hasAttribute('zen-glance-tab')) {
+    const ignoreSplit = tab.hasAttribute('zen-dont-split-glance');
+    tab.removeAttribute('zen-dont-split-glance');
+    if (tab.hasAttribute('zen-glance-tab') && !ignoreSplit) {
       // Extract from parent node so we are not selecting the wrong (current) tab
       tab = tab.parentNode.closest('.tabbrowser-tab');
       console.assert(tab, 'Tab not found for zen-glance-tab');
@@ -963,8 +965,9 @@ class ZenViewSplitter extends ZenDOMOperatedFeature {
         // Add any tabs that are not already in the group
         for (let i = 0; i < tabs.length; i++) {
           const tab = tabs[i];
-          if (!group.tabs.includes(tab) && tab.pinned === !!group.pinned) {
+          if (!group.tabs.includes(tab)) {
             gBrowser.moveTabToGroup(tab, this._getSplitViewGroup(tabs));
+            group.tabs.push(tab);
             this.addTabToSplit(tab, group.layoutTree);
           }
         }

@@ -36,7 +36,7 @@
           case 'zen-glance-sidebar-close':
             this.closeGlance({ onTabClose: true });
             break;
-          case 'zen-glance-sidebar-fullscreen':
+          case 'zen-glance-sidebar-open':
             this.fullyOpenGlance();
             break;
           case 'zen-glance-sidebar-split':
@@ -228,20 +228,27 @@
 
     _clearContainerStyles(container) {
       const inset = container.style.inset;
-      window.requestAnimationFrame(() => {
-        container.removeAttribute('style');
-        container.style.inset = inset;
-      });
+      container.removeAttribute('style');
+      container.style.inset = inset;
     }
 
-    closeGlance({ noAnimation = false, onTabClose = false, setNewID = null, isDifferent = false, hasFocused = false } = {}) {
+    closeGlance({
+      noAnimation = false,
+      onTabClose = false,
+      setNewID = null,
+      isDifferent = false,
+      hasFocused = false,
+      skipPermitUnload = false,
+    } = {}) {
       if (this._animating || !this.#currentBrowser || this.animatingOpen || this._duringOpening) {
         return;
       }
 
-      let { permitUnload } = this.#currentBrowser.permitUnload();
-      if (!permitUnload) {
-        return;
+      if (!skipPermitUnload) {
+        let { permitUnload } = this.#currentBrowser.permitUnload();
+        if (!permitUnload) {
+          return;
+        }
       }
 
       if (onTabClose && hasFocused && !this.#confirmationTimeout) {
@@ -497,6 +504,11 @@
         if (url1.startsWith('about:')) {
           return true;
         }
+        // https://github.com/zen-browser/desktop/issues/7173: Only glance up links that are http(s) or file
+        const url2Spec = url2.spec;
+        if (!url2Spec.startsWith('http') && !url2Spec.startsWith('https') && !url2Spec.startsWith('file')) {
+          return false;
+        }
         return Services.io.newURI(url1).host !== url2.host;
       } catch (e) {
         return true;
@@ -540,20 +552,22 @@
       this.overlay.classList.remove('zen-glance-overlay');
       this._clearContainerStyles(this.browserWrapper);
       this.animatingFullOpen = false;
-      this.closeGlance({ noAnimation: true });
+      this.closeGlance({ noAnimation: true, skipPermitUnload: true });
       this.#glances.delete(this.#currentGlanceID);
     }
 
     async fullyOpenGlance({ forSplit = false } = {}) {
       this.animatingFullOpen = true;
+      this.#currentTab.setAttribute('zen-dont-split-glance', true);
+
       gBrowser._insertTabAtIndex(this.#currentTab, {
         index: this.getTabPosition(this.#currentTab),
       });
 
+      this.#currentTab.removeAttribute('zen-glance-tab');
       this._clearContainerStyles(this.browserWrapper);
       this.browserWrapper.removeAttribute('has-finished-animation');
       this.browserWrapper.setAttribute('animate-full', true);
-      this.#currentTab.removeAttribute('zen-glance-tab');
       this.#currentTab.removeAttribute('glance-id');
       this.#currentParentTab.removeAttribute('glance-id');
       gBrowser.selectedTab = this.#currentTab;
@@ -620,7 +634,7 @@
         const currentParentTab = this.#currentParentTab;
 
         await this.fullyOpenGlance({ forSplit: true });
-        gZenViewSplitter.splitTabs([currentTab, currentParentTab], 'vsep');
+        gZenViewSplitter.splitTabs([currentTab, currentParentTab], 'vsep', 1);
         const browserContainer = currentTab.linkedBrowser?.closest('.browserSidebarContainer');
         if (!gReduceMotion && browserContainer) {
           gZenViewSplitter.animateBrowserDrop(browserContainer);

@@ -68,6 +68,9 @@ pref("browser.menu.showViewImageInfo", true);
 pref("findbar.highlightAll", true);
 pref("layout.word_select.eat_space_to_next_word", false);
 
+// TODO:
+pref("browser.tabs.groups.enabled", false);
+
 // Enable Do Not Track and GPC by default.
 pref("privacy.donottrackheader.enabled", false);
 pref("privacy.globalprivacycontrol.enabled", true);
@@ -375,6 +378,11 @@ pref('widget.macos.titlebar-blend-mode.behind-window', true);
 // 6. headerView
 // 7. underlay
 pref('zen.widget.macos.window-material', 3);
+#endif
+
+// Enable transparent background for linux
+#ifdef MOZ_WIDGET_GTK
+pref('zen.widget.linux.transparency', true);
 #endif
 
 // Urlbar and autocomplete

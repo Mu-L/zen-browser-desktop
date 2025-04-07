@@ -21,6 +21,11 @@ on:
         options:
           - 'release'
           - 'twilight'
+      use-sccache:
+        description: 'Use sccache'
+        required: true
+        type: 'boolean'
+        default: false
   workflow_call:
     inputs:
       create_release:
@@ -53,6 +58,7 @@ jobs:
         run: |
           echo "create_release: ${{ inputs.create_release }}"
           echo "update_version: ${{ inputs.update_version }}"
+          echo "use sccache: ${{ inputs.use-sccache }}"
           echo "update_branch: ${{ inputs.update_branch }}"
           echo "GITHUB_REPOSITORY: ${{ github.repository }}"
           echo "GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}"
@@ -639,7 +645,7 @@ jobs:
           pwd
           ls .
           ls ..
-          mv releases.xml ./build/flatpak/app.zen_browser.zen.metainfo.xml
+          mv releases.xml ./flatpak/app.zen_browser.zen.metainfo.xml
           # output the version to the file
           echo -n ${{ needs.build-data.outputs.version }} > ./flatpak/version
 
@@ -701,7 +707,7 @@ jobs:
             --linux-archive zen.linux-x86_64.tar.xz \
             --linux-aarch64-archive zen.linux-aarch64.tar.xz \
             --output app.zen_browser.zen.yml \
-            --template-root ./zen-browser/flatpak
+            --template-root ./zen-browser/build/flatpak
 
       - name: Commit changes
         run: |
