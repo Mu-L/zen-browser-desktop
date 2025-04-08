@@ -176,7 +176,6 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
   }
 
   get tabboxChildren() {
-    console.log(new Error().stack);
     return Array.from(this.activeWorkspaceStrip?.children || []);
   }
 

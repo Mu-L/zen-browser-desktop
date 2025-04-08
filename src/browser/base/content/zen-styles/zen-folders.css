@@ -1,5 +1,10 @@
 tab-group[split-view-group] {
   display: flex;
+}
+
+tab-group[split-view-group] > .tab-group-container {
+  display: flex;
+  flex: 1;
   flex-wrap: nowrap;
   border-radius: var(--border-radius-medium);
   padding: 0 2px;
@@ -147,7 +152,7 @@ tab-group:not([split-view-group]) {
     margin: var(--tab-block-margin) auto !important;
   }
 
-  & .tab-group-container {
+  & > .tab-group-container {
     padding-top: var(--tab-block-margin);
     padding-left: var(--zen-folder-indent, 0.5em);
 
@@ -158,7 +163,7 @@ tab-group:not([split-view-group]) {
 
   margin: var(--tab-block-margin);
 
-  & .tab-group-label-container {
+  & > .tab-group-label-container {
     flex: 0 0 auto !important;
     position: sticky !important;
     top: 0 !important;
@@ -208,11 +213,11 @@ tab-group:not([split-view-group]) {
   }
 
   &[collapsed] {
-    & .tabbrowser-tab:not([hidden]) {
+    & > .tabbrowser-tab:not([hidden]) {
       display: flex;
     }
 
-    & .tab-group-container {
+    & > .tab-group-container {
       overflow-y: hidden;
     }
   }
