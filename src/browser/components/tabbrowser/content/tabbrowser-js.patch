@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tabbrowser.js b/browser/components/tabbrowser/content/tabbrowser.js
-index 5f406ea5d09273c9b70b84eee24c6267f88692f8..ef12b6bcde0adc517ab9747adf3f93a94af927a4 100644
+index 5f406ea5d09273c9b70b84eee24c6267f88692f8..d7bf3cb603b61f2a699e5265ee47026aeb4ca222 100644
 --- a/browser/components/tabbrowser/content/tabbrowser.js
 +++ b/browser/components/tabbrowser/content/tabbrowser.js
 @@ -424,11 +424,67 @@
@@ -685,15 +685,6 @@ index 5f406ea5d09273c9b70b84eee24c6267f88692f8..ef12b6bcde0adc517ab9747adf3f93a9
          return;
        }
        if (aTab.group && aTab.group.id === aGroup.id) {
-@@ -5945,7 +6122,7 @@
-       }
- 
-       aGroup.collapsed = false;
--      this.#handleTabMove(aTab, () => aGroup.appendChild(aTab));
-+      this.#handleTabMove(aTab, () => aGroup.querySelector(".tab-group-container").appendChild(aTab));
-       this.removeFromMultiSelectedTabs(aTab);
-       this.tabContainer._notifyBackgroundTab(aTab);
-     }
 @@ -5961,6 +6138,10 @@
  
        moveActionCallback();
