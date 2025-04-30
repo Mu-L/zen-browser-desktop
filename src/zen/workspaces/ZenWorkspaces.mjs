@@ -2930,6 +2930,8 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
     #ignoreNextEvents = false;
     #waitForPromise = null;
 
+    lastSelectedWindow = false;
+
     constructor() {
       super();
       if (!window.closed) {
@@ -2941,6 +2943,8 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
       await ZenWorkspaces.promiseInitialized;
       this.#makeSureAllTabsHaveIds();
       this.#setUpEventListeners();
+
+      this.lastSelectedWindow = ZenMultiWindowFeature.isActiveWindow;
     }
 
     #makeSureAllTabsHaveIds() {
@@ -2971,10 +2975,58 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
       for (const event of kEvents) {
         window.addEventListener(event, eventListener);
       }
+
+      window.addEventListener('unload', () => {
+        for (const event of kEvents) {
+          window.removeEventListener(event, eventListener);
+        }
+      });
+
+      window.addEventListener('focus', this.#onWindowFocus.bind(this));
     }
 
     #handleEvent(event) {
       this.#propagateToOtherWindows(event);
+    }
+
+    #getLastSelectedWindow() {
+      return new Promise(async (resolve) => {
+        await this.foreachWindowAsActive(async (browser) => {
+          if (browser.gZenWorkspaceWindowSync && browser.gZenWorkspaceWindowSync.lastSelectedWindow) {
+            resolve(browser);
+          }
+        });
+        resolve(null);
+      });
+    }
+
+    async #onWindowFocus(event) {
+      const lastSelectedWindow = await this.#getLastSelectedWindow();
+      if (lastSelectedWindow && lastSelectedWindow !== window) {
+        lastSelectedWindow.gZenWorkspaceWindowSync.lastSelectedWindow = false;
+        this.lastSelectedWindow = true;
+        this.#replaceBrowsersWithLastSelectedWindow(lastSelectedWindow);
+      } else {
+        this.lastSelectedWindow = false;
+      }
+    }
+
+    #replaceBrowsersWithLastSelectedWindow(lastSelectedWindow) {
+      // Replace all `linkedBrowser` elements with the last selected window's browsers
+      // from all the tabs in the current window
+      const allTabs = lastSelectedWindow.ZenWorkspaces.allStoredTabs;
+      for (const oldTab of allTabs) {
+        const tabId = this.#getTabId(oldTab);
+        const targetTab = this.#getTabWithId(tabId);
+        if (targetTab) {
+          const browserToReplace = oldTab.linkedBrowser;
+          const browserReplaced = targetTab.linkedBrowser;
+          const parentNode = browserReplaced.parentNode;
+          if (browserToReplace && parentNode) {
+            gBrowser.swapBrowsers(browserToReplace, browserReplaced);
+          }
+        }
+      }
     }
 
     async #propagateToOtherWindows(event) {
@@ -3148,22 +3200,20 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
 
     async #onTabOpen(event) {
       await new Promise((resolve) => {
-        setTimeout(() => {
-          const targetTab = event.target;
-          const isPinned = targetTab.pinned;
-          const isEssential = isPinned && targetTab.hasAttribute('zen-essential');
-          const tabIndex = targetTab._tPos;
-    
-          const duplicatedTab = SessionStore.duplicateTab(window, targetTab, 0, true);
-          if (isEssential) {
-            gZenPinnedTabManager.addToEssentials(duplicatedTab);
-          } else if (isPinned) {
-            gBrowser.pinTab(duplicatedTab);
-          }
-    
-          gBrowser.moveTabTo(duplicatedTab, { tabIndex, forceUngrouped: !!targetTab.group });
-          resolve();
-        }, 0);
+        const targetTab = event.target;
+        const isPinned = targetTab.pinned;
+        const isEssential = isPinned && targetTab.hasAttribute('zen-essential');
+        const tabIndex = targetTab._tPos;
+
+        const duplicatedTab = SessionStore.duplicateTab(window, targetTab, 0, true);
+        if (isEssential) {
+          gZenPinnedTabManager.addToEssentials(duplicatedTab);
+        } else if (isPinned) {
+          gBrowser.pinTab(duplicatedTab);
+        }
+
+        gBrowser.moveTabTo(duplicatedTab, { tabIndex, forceUngrouped: !!targetTab.group });
+        resolve();
       });
     }
   }
