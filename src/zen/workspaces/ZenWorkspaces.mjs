@@ -610,8 +610,8 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
     }
 
     // Apply a translateX to the tab strip to give the user feedback on the swipe
-    const currentWorkspace = this.activeWorkspace;
-    this._organizeWorkspaceStripLocations({ uuid: currentWorkspace }, true, translateX);
+    const currentWorkspace = this.getActiveWorkspaceFromCache();
+    this._organizeWorkspaceStripLocations(currentWorkspace, true, translateX);
   }
 
   async _handleSwipeEnd(event) {
@@ -678,7 +678,7 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
 
   get workspaceEnabled() {
     if (typeof this._workspaceEnabled === 'undefined') {
-      this._workspaceEnabled = this.shouldHaveWorkspaces;
+      this._workspaceEnabled = this.shouldHaveWorkspaces && !Services.prefs.getBoolPref('zen.testing.profiling.enabled', false);
     }
     return this._workspaceEnabled && !window.closed;
   }
@@ -784,13 +784,10 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
     }
     const currentTab = gBrowser.selectedTab;
     let showed = false;
-    if (currentTab.pinned) {
+    if (this._tabToRemoveForEmpty) {
       this.selectEmptyTab();
-      try {
-        gZenTabUnloader.explicitUnloadTabs([currentTab]);
-      } catch (e) {
-        console.error('ZenWorkspaces: Error unloading tab', e);
-      }
+      gBrowser.removeTab(this._tabToRemoveForEmpty);
+      delete this._tabToRemoveForEmpty;
       showed = true;
     } else {
       const currentTabURL = currentTab.linkedBrowser?.currentURI?.spec;
@@ -2032,7 +2029,7 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
       );
       for (const cloned of clonedEssentials) {
         const container = cloned.container;
-        const essentialsWorkspacess = cloned.workspaces;
+        const essentialsWorkspaces = cloned.workspaces;
         const repeats = cloned.repeat;
         // Animate like the workspaces above expect essentials are a bit more
         // complicated because they are not based on workspaces but on containers
@@ -2047,9 +2044,9 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
         // will slide in from the right
 
         // Get the index from first and last workspace
-        const firstWorkspaceIndex = workspaces.workspaces.findIndex((w) => w.uuid === essentialsWorkspacess[0].uuid);
+        const firstWorkspaceIndex = workspaces.workspaces.findIndex((w) => w.uuid === essentialsWorkspaces[0].uuid);
         const lastWorkspaceIndex = workspaces.workspaces.findIndex(
-          (w) => w.uuid === essentialsWorkspacess[essentialsWorkspacess.length - 1].uuid
+          (w) => w.uuid === essentialsWorkspaces[essentialsWorkspaces.length - 1].uuid
         );
         // Check if the container is even going to appear on the screen, to save on animation
         if (
@@ -2077,7 +2074,18 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
             (isGoingLeft ? repeats - 1 : -repeats + 1)
           ) * 100;
 
-        const needsOffsetAdjustment = stepsInBetween > essentialsWorkspacess.length || usingSameContainer;
+        // If we are on the same container and both new and old workspace are in the same "essentialsWorkspaces"
+        // we can simply not animate the essentials
+        if (
+          usingSameContainer &&
+          essentialsWorkspaces.some((w) => w.uuid === newWorkspace.uuid) &&
+          essentialsWorkspaces.some((w) => w.uuid === previousWorkspace.uuid)
+        ) {
+          newOffset = 0;
+          existingOffset = 0;
+        }
+
+        const needsOffsetAdjustment = stepsInBetween > essentialsWorkspaces.length || usingSameContainer;
 
         if (repeats > 0 && needsOffsetAdjustment) {
           if (!isGoingLeft) {
@@ -2386,16 +2394,6 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
         );
         const workspaceObject = this.getWorkspaceFromId(workspaceId);
         const essentialContainer = this.getEssentialsSection(workspaceObject.containerTabId);
-        const essentialNumChildren = essentialContainer.children.length;
-        let essentialHackType = 0;
-        if (essentialNumChildren % 3 === 0) {
-          essentialHackType = 3;
-        }
-        if (essentialHackType > 0) {
-          essentialContainer.setAttribute('data-hack-type', essentialHackType);
-        } else {
-          essentialContainer.removeAttribute('data-hack-type');
-        }
         this._updateMarginTopPinnedTabs(arrowScrollbox, pinnedContainer, essentialContainer, workspaceIndicator, forAnimation);
         this.updateShouldHideSeparator(arrowScrollbox, pinnedContainer);
       }
@@ -2659,7 +2657,12 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
       return [userContextId, false, undefined];
     }
 
-    if (this.shouldForceContainerTabsToWorkspace && typeof userContextId !== 'undefined' && this._workspaceCache?.workspaces) {
+    if (
+      this.shouldForceContainerTabsToWorkspace &&
+      typeof userContextId !== 'undefined' &&
+      this._workspaceCache?.workspaces &&
+      !fromExternal
+    ) {
       // Find all workspaces that match the given userContextId
       const matchingWorkspaces = this._workspaceCache.workspaces.filter(
         (workspace) => workspace.containerTabId === userContextId
@@ -2681,6 +2684,17 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
       return [userContextId, false, undefined];
     }
     return [activeWorkspaceUserContextId, true, undefined];
+  }
+
+  getTabsToExclude(aTab) {
+    const tabWorkspaceId = aTab.getAttribute('zen-workspace-id');
+    // Return all tabs that are not on the same workspace
+    return this.allStoredTabs.filter(
+      (tab) =>
+        tab.getAttribute('zen-workspace-id') !== tabWorkspaceId &&
+        !tab.hasAttribute('zen-essential') &&
+        !(this.containerSpecificEssentials && tab.getAttribute('container') !== aTab.getAttribute('container'))
+    );
   }
 
   async shortcutSwitchTo(index) {

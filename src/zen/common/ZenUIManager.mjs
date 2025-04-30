@@ -66,11 +66,7 @@ var gZenUIManager = {
     tabs.style.removeProperty('flex');
     tabs.style.maxHeight = height + 'px';
     gZenVerticalTabsManager.actualWindowButtons.removeAttribute('zen-has-hover');
-    try {
-      gURLBar.zenUpdateLayoutBreakout();
-    } catch (error) {
-      console.error('Error updating layout breakout:', error);
-    }
+    gZenVerticalTabsManager.recalculateURLBarHeight();
     if (!this._preventToolbarRebuild) {
       setTimeout(() => {
         ZenWorkspaces.updateTabsContainers();
@@ -629,7 +625,7 @@ var gZenVerticalTabsManager = {
     document.getElementById('urlbar').removeAttribute('--urlbar-height');
     if (!this._hasSetSingleToolbar) {
       document.getElementById('urlbar').style.setProperty('--urlbar-height', '32px');
-    } else {
+    } else if (gURLBar.getAttribute('breakout') !== 'true') {
       try {
         gURLBar.zenUpdateLayoutBreakout();
       } catch (e) {
