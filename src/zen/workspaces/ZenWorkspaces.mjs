@@ -2950,6 +2950,8 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
         'TabHide',
         'TabShow',
         'TabMove',
+        'Zen:TabIconChanged',
+        'Zen:TabLabelChanged',
       ];
       const eventListener = this.#handleEvent.bind(this);
       for (const event of kEvents) {
@@ -3008,6 +3010,12 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
         case 'TabMove':
           this.#onTabMove(event);
           break;
+        case 'Zen:TabIconChanged':
+          this.#onTabIconChanged(event);
+          break;
+        case 'Zen:TabLabelChanged':
+          this.#onTabLabelChanged(event);
+          break;
         default:
           console.warn(`Unhandled event type: ${event.type}`);
           break;
@@ -3026,6 +3034,24 @@ var ZenWorkspaces = new (class extends ZenMultiWindowFeature {
         }
       }
       return null;
+    }
+
+    #onTabIconChanged(event) {
+      this.#updateTabIconAndLabel(event);
+    }
+
+    #onTabLabelChanged(event) {
+      this.#updateTabIconAndLabel(event);
+    }
+
+    #updateTabIconAndLabel(event) {
+      const targetTab = event.target;
+      const tabId = this.#getTabId(targetTab);
+      const tabToChange = this.#getTabWithId(tabId);
+      if (tabToChange) {
+        gBrowser.setIcon(tabToChange, gBrowser.getIcon(targetTab));
+        gBrowser._setTabLabel(tabToChange, targetTab.label);
+      }
     }
 
     #onTabClose(event) {
