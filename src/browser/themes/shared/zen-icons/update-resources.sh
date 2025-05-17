@@ -29,15 +29,6 @@ do_common_icons() {
   done
 }
 
-do_common_icons() {
-  for filename in common/*.svg; do
-    # remove the os/ prefix
-    filename=$(basename $filename)
-    echo "Working on $filename"
-    echo "  skin/classic/browser/zen-icons/$filename                      (../shared/zen-icons/common/$filename) " >> jar.inc.mn
-  done
-}
-
 do_icons lin WIN
 do_icons lin MACOSX # TODO: use macos icons
 do_icons lin LINUX

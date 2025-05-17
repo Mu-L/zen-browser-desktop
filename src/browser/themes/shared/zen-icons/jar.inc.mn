@@ -415,4 +415,5 @@
 #endif
   skin/classic/browser/zen-icons/folder-closed.svg                      (../shared/zen-icons/common/folder-closed.svg) 
   skin/classic/browser/zen-icons/folder-open.svg                      (../shared/zen-icons/common/folder-open.svg) 
+  skin/classic/browser/zen-icons/urlbar-arrow.svg                      (../shared/zen-icons/common/urlbar-arrow.svg) 
   skin/classic/browser/zen-icons/icons.css                      (../shared/zen-icons/icons.css) 

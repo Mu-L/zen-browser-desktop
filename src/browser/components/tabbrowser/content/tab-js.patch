@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tab.js b/browser/components/tabbrowser/content/tab.js
-index fc3a9730b394341843cfa9f559a792acb34c7d29..04aeb2c246a2722224ee77284726363328ecc8d4 100644
+index dc92771ebc65095dfebbddc238ee6d4fffd897bf..57d6d18f95e557f4f3db0b37c5b48f860e1e3d42 100644
 --- a/browser/components/tabbrowser/content/tab.js
 +++ b/browser/components/tabbrowser/content/tab.js
 @@ -21,6 +21,7 @@
@@ -48,7 +48,7 @@ index fc3a9730b394341843cfa9f559a792acb34c7d29..04aeb2c246a2722224ee772847263633
      }
  
      get lastAccessed() {
-@@ -351,8 +354,8 @@
+@@ -359,8 +362,8 @@
      }
  
      get group() {
@@ -59,7 +59,7 @@ index fc3a9730b394341843cfa9f559a792acb34c7d29..04aeb2c246a2722224ee772847263633
        }
        return null;
      }
-@@ -446,6 +449,8 @@
+@@ -454,6 +457,8 @@
          this.style.MozUserFocus = "ignore";
        } else if (
          event.target.classList.contains("tab-close-button") ||
