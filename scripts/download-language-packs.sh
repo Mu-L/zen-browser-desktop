@@ -1,4 +1,12 @@
-set -ex
+set -x
+
+if ! [ -z "$ZEN_L10N_CURR_DIR" ]; then
+  cd $ZEN_L10N_CURR_DIR
+fi
+
+# remove "\r" from ./l10n/supported-languages
+# note: it's fine if it fails
+sed -i 's/\r$//' ./l10n/supported-languages
 
 CURRENT_DIR=$(pwd)
 
@@ -17,6 +25,16 @@ cd firefox-l10n
 git checkout $LAST_FIREFOX_L10N_COMMIT
 cd $CURRENT_DIR
 
+rsyncExists=$(command -v rsync)
+
+if [ -z "$rsyncExists" ]; then
+  echo "rsync not found, using cp instead"
+else
+  echo "rsync found!"
+fi
+
+set -e
+
 update_language() {
   langId=$1
   cd ./l10n
@@ -24,7 +42,13 @@ update_language() {
 
   echo "Updating $langId"
   # move the contents from ../firefox-l10n/$langId to ./l10n/$langId
-  rsync -av --progress ../firefox-l10n/$langId/ . --exclude .git
+  # if rsync exists, use it
+  # if not, use cp
+  if [ -z "$rsyncExists" ]; then
+    cp -r $CURRENT_DIR/l10n/firefox-l10n/$langId/* .
+  else
+    rsync -av --progress ../firefox-l10n/$langId/ . --exclude .git
+  fi
 
   cd $CURRENT_DIR
 }

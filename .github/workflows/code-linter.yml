@@ -10,8 +10,11 @@ on:
     branches:
       - dev
 
+permissions:
+  contents: read
+
 jobs:
-  pr-test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

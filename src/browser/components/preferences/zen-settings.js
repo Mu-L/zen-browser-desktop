@@ -16,6 +16,8 @@ var gZenMarketplaceManager = {
 
     header.appendChild(this._initDisableAll());
 
+    this._initImportExport();
+
     this.__hasInitializedEvents = true;
 
     await this._buildThemesList();
@@ -56,22 +58,46 @@ var gZenMarketplaceManager = {
     });
   },
 
+  _initImportExport() {
+    const importButton = document.getElementById('zenThemeMarketplaceImport');
+    const exportButton = document.getElementById('zenThemeMarketplaceExport');
+
+    if (importButton) {
+      importButton.addEventListener('click', async () => {
+        await this._importThemes();
+      });
+    }
+
+    if (exportButton) {
+      exportButton.addEventListener('click', async () => {
+        await this._exportThemes();
+      });
+    }
+  },
+
   _initDisableAll() {
     const areThemesDisabled = Services.prefs.getBoolPref('zen.themes.disable-all', false);
     const browser = ZenThemesCommon.currentBrowser;
     const mozToggle = document.createElement('moz-toggle');
 
-    mozToggle.className = 'zenThemeMarketplaceItemPreferenceToggle zenThemeMarketplaceDisableAllToggle';
+    mozToggle.className =
+      'zenThemeMarketplaceItemPreferenceToggle zenThemeMarketplaceDisableAllToggle';
     mozToggle.pressed = !areThemesDisabled;
 
-    browser.document.l10n.setAttributes(mozToggle, `zen-theme-disable-all-${!areThemesDisabled ? 'enabled' : 'disabled'}`);
+    browser.document.l10n.setAttributes(
+      mozToggle,
+      `zen-theme-disable-all-${!areThemesDisabled ? 'enabled' : 'disabled'}`
+    );
 
     mozToggle.addEventListener('toggle', async (event) => {
       const { pressed = false } = event.target || {};
 
       this.themesList.style.display = pressed ? '' : 'none';
       Services.prefs.setBoolPref('zen.themes.disable-all', !pressed);
-      browser.document.l10n.setAttributes(mozToggle, `zen-theme-disable-all-${pressed ? 'enabled' : 'disabled'}`);
+      browser.document.l10n.setAttributes(
+        mozToggle,
+        `zen-theme-disable-all-${pressed ? 'enabled' : 'disabled'}`
+      );
     });
 
     if (areThemesDisabled) {
@@ -82,7 +108,6 @@ var gZenMarketplaceManager = {
   },
 
   async observe() {
-    ZenThemesCommon.resetThemesCache();
     await this._buildThemesList();
   },
 
@@ -153,6 +178,88 @@ var gZenMarketplaceManager = {
     this.triggerThemeUpdate();
   },
 
+  async _importThemes() {
+    const errorBox = document.getElementById('zenThemeMarketplaceImportFailure');
+    const successBox = document.getElementById('zenThemeMarketplaceImportSuccess');
+    successBox.hidden = true;
+    errorBox.hidden = true;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.style.display = 'none';
+    input.setAttribute('moz-accept', '.json');
+    input.setAttribute('accept', '.json');
+
+    let timeout;
+    const filePromise = new Promise((resolve) => {
+      input.addEventListener('change', (event) => {
+        if (timeout) clearTimeout(timeout);
+        const file = event.target.files[0];
+        resolve(file);
+      });
+      timeout = setTimeout(() => {
+        console.warn('[ZenThemeMarketplaceParent:settings]: Import timeout reached, aborting.');
+        resolve(null);
+      }, 60000);
+    });
+
+    input.click();
+
+    try {
+      const file = await filePromise;
+      if (!file) {
+        return;
+      }
+      const content = await file.text();
+
+      const themes = JSON.parse(content);
+      for (const theme of Object.values(themes)) {
+        theme.themeId = theme.id;
+        window.ZenInstallTheme(theme);
+      }
+    } catch (error) {
+      console.error('[ZenThemeMarketplaceParent:settings]: Error while importing themes:', error);
+      errorBox.hidden = false;
+    } finally {
+      if (input) input.remove();
+    }
+  },
+
+  async _exportThemes() {
+    const errorBox = document.getElementById('zenThemeMarketplaceExportFailure');
+    const successBox = document.getElementById('zenThemeMarketplaceExportSuccess');
+
+    successBox.hidden = true;
+    errorBox.hidden = true;
+
+    let a, url;
+    try {
+      const themes = await ZenThemesCommon.getThemes();
+      const themesJson = JSON.stringify(themes, null, 2);
+      const blob = new Blob([themesJson], { type: 'application/json' });
+      url = URL.createObjectURL(blob);
+      // Creating a link to download the JSON file
+      a = document.createElement('a');
+      a.href = url;
+      a.download = 'zen-themes-export.json';
+
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      successBox.hidden = false;
+    } catch (error) {
+      console.error('[ZenThemeMarketplaceParent:settings]: Error while exporting themes:', error);
+      errorBox.hidden = false;
+    } finally {
+      if (a) {
+        a.remove();
+      }
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    }
+  },
+
   async _buildThemesList() {
     if (!this.themesList) {
       return;
@@ -168,9 +275,8 @@ var gZenMarketplaceManager = {
     const themeList = document.createElement('div');
 
     for (const theme of Object.values(themes).sort((a, b) => a.name.localeCompare(b.name))) {
-      const sanitizedName = `theme-${theme.name?.replaceAll(/\s/g, '-')?.replaceAll(/[^A-z_-]+/g, '')}`;
+      const sanitizedName = `theme-${theme.name?.replaceAll(/\s/g, '-')?.replaceAll(/[^A-Za-z_-]+/g, '')}`;
       const isThemeEnabled = theme.enabled === undefined || theme.enabled;
-
       const fragment = window.MozXULElement.parseXULToFragment(`
         <vbox class="zenThemeMarketplaceItem">
           <vbox class="zenThemeMarketplaceItemContent">
@@ -181,6 +287,7 @@ var gZenMarketplaceManager = {
           </vbox>
           <hbox class="zenThemeMarketplaceItemActions">
             ${theme.preferences ? `<button id="zenThemeMarketplaceItemConfigureButton-${sanitizedName}" class="zenThemeMarketplaceItemConfigureButton" hidden="true"></button>` : ''}
+            ${theme.homepage ? `<button id="zenThemeMarketplaceItemHomePageLink-${sanitizedName}" class="zenThemeMarketplaceItemHomepageButton" zen-theme-id="${theme.id}"></button>` : ''}
             <button class="zenThemeMarketplaceItemUninstallButton" data-l10n-id="zen-theme-marketplace-remove-button" zen-theme-id="${theme.id}"></button>
           </hbox>
         </vbox>
@@ -242,18 +349,28 @@ var gZenMarketplaceManager = {
         if (!event.target.hasAttribute('pressed')) {
           await this.disableTheme(themeId);
 
-          browser.document.l10n.setAttributes(mozToggle, 'zen-theme-marketplace-toggle-disabled-button');
+          browser.document.l10n.setAttributes(
+            mozToggle,
+            'zen-theme-marketplace-toggle-disabled-button'
+          );
 
           if (theme.preferences) {
-            document.getElementById(`zenThemeMarketplaceItemConfigureButton-${sanitizedName}`).setAttribute('hidden', true);
+            document
+              .getElementById(`zenThemeMarketplaceItemConfigureButton-${sanitizedName}`)
+              .setAttribute('hidden', true);
           }
         } else {
           await this.enableTheme(themeId);
 
-          browser.document.l10n.setAttributes(mozToggle, 'zen-theme-marketplace-toggle-enabled-button');
+          browser.document.l10n.setAttributes(
+            mozToggle,
+            'zen-theme-marketplace-toggle-enabled-button'
+          );
 
           if (theme.preferences) {
-            document.getElementById(`zenThemeMarketplaceItemConfigureButton-${sanitizedName}`).removeAttribute('hidden');
+            document
+              .getElementById(`zenThemeMarketplaceItemConfigureButton-${sanitizedName}`)
+              .removeAttribute('hidden');
           }
         }
         setTimeout(() => {
@@ -264,23 +381,41 @@ var gZenMarketplaceManager = {
 
       fragment.querySelector('.zenThemeMarketplaceItemTitle').textContent = themeName;
       fragment.querySelector('.zenThemeMarketplaceItemDescription').textContent = theme.description;
-      fragment.querySelector('.zenThemeMarketplaceItemUninstallButton').addEventListener('click', async (event) => {
-        const [msg] = await document.l10n.formatValues([{ id: 'zen-theme-marketplace-remove-confirmation' }]);
+      fragment
+        .querySelector('.zenThemeMarketplaceItemUninstallButton')
+        .addEventListener('click', async (event) => {
+          const [msg] = await document.l10n.formatValues([
+            { id: 'zen-theme-marketplace-remove-confirmation' },
+          ]);
 
-        if (!confirm(msg)) {
-          return;
-        }
+          if (!confirm(msg)) {
+            return;
+          }
 
-        await this.removeTheme(event.target.getAttribute('zen-theme-id'));
-      });
-
-      if (theme.preferences) {
-        fragment.querySelector('.zenThemeMarketplaceItemConfigureButton').addEventListener('click', () => {
-          dialog.showModal();
+          await this.removeTheme(event.target.getAttribute('zen-theme-id'));
         });
 
+      if (theme.homepage) {
+        const homepageButton = fragment.querySelector('.zenThemeMarketplaceItemHomepageButton');
+        homepageButton.addEventListener('click', () => {
+          // open the homepage url in a new tab
+          const url = theme.homepage;
+
+          window.open(url, '_blank');
+        });
+      }
+
+      if (theme.preferences) {
+        fragment
+          .querySelector('.zenThemeMarketplaceItemConfigureButton')
+          .addEventListener('click', () => {
+            dialog.showModal();
+          });
+
         if (isThemeEnabled) {
-          fragment.querySelector('.zenThemeMarketplaceItemConfigureButton').removeAttribute('hidden');
+          fragment
+            .querySelector('.zenThemeMarketplaceItemConfigureButton')
+            .removeAttribute('hidden');
         }
       }
 
@@ -321,7 +456,10 @@ var gZenMarketplaceManager = {
               if (placeholder) {
                 defaultItem.setAttribute('label', placeholder || '-');
               } else {
-                browser.document.l10n.setAttributes(defaultItem, 'zen-theme-marketplace-dropdown-default-label');
+                browser.document.l10n.setAttributes(
+                  defaultItem,
+                  'zen-theme-marketplace-dropdown-default-label'
+                );
               }
 
               menupopup.appendChild(defaultItem);
@@ -389,7 +527,9 @@ var gZenMarketplaceManager = {
                 </hbox>
               `);
 
-              const checkboxElement = checkbox.querySelector('.zenThemeMarketplaceItemPreferenceCheckbox');
+              const checkboxElement = checkbox.querySelector(
+                '.zenThemeMarketplaceItemPreferenceCheckbox'
+              );
               checkboxElement.setAttribute('label', label);
               checkboxElement.setAttribute('tooltiptext', property);
               checkboxElement.setAttribute('zen-pref', property);
@@ -435,11 +575,14 @@ var gZenMarketplaceManager = {
               if (placeholder) {
                 input.setAttribute('placeholder', placeholder || '-');
               } else {
-                browser.document.l10n.setAttributes(input, 'zen-theme-marketplace-input-default-placeholder');
+                browser.document.l10n.setAttributes(
+                  input,
+                  'zen-theme-marketplace-input-default-placeholder'
+                );
               }
 
               input.addEventListener(
-                'input',
+                'change',
                 ZenThemesCommon.debounce((event) => {
                   const value = event.target.value;
 
@@ -447,9 +590,13 @@ var gZenMarketplaceManager = {
                   this._triggerBuildUpdateWithoutRebuild();
 
                   if (value === '') {
-                    browser.document.querySelector(':root').style.removeProperty(`--${sanitizedProperty}`);
+                    browser.document
+                      .querySelector(':root')
+                      .style.removeProperty(`--${sanitizedProperty}`);
                   } else {
-                    browser.document.querySelector(':root').style.setProperty(`--${sanitizedProperty}`, value);
+                    browser.document
+                      .querySelector(':root')
+                      .style.setProperty(`--${sanitizedProperty}`, value);
                   }
                 }, 500)
               );
@@ -519,7 +666,11 @@ var gZenLooksAndFeel = {
       layout.classList.remove('selected');
       if (layout.getAttribute('layout') == 'single' && isSingleToolbar) {
         layout.classList.add('selected');
-      } else if (layout.getAttribute('layout') == 'multiple' && !isSingleToolbar && isExtendedSidebar) {
+      } else if (
+        layout.getAttribute('layout') == 'multiple' &&
+        !isSingleToolbar &&
+        isExtendedSidebar
+      ) {
         layout.classList.add('selected');
       } else if (layout.getAttribute('layout') == 'collapsed' && !isExtendedSidebar) {
         layout.classList.add('selected');
@@ -539,7 +690,10 @@ var gZenLooksAndFeel = {
 
         layout.classList.add('selected');
 
-        Services.prefs.setBoolPref(kZenExtendedSidebar, layout.getAttribute('layout') != 'collapsed');
+        Services.prefs.setBoolPref(
+          kZenExtendedSidebar,
+          layout.getAttribute('layout') != 'collapsed'
+        );
         Services.prefs.setBoolPref(kZenSingleToolbar, layout.getAttribute('layout') == 'single');
       });
     }
@@ -623,11 +777,19 @@ var gZenWorkspacesSettings = {
     };
     Services.prefs.addObserver('zen.tab-unloader.enabled', tabsUnloaderPrefListener);
     Services.prefs.addObserver('zen.glance.enabled', tabsUnloaderPrefListener); // We can use the same listener for both prefs
+    Services.prefs.addObserver(
+      'zen.workspaces.container-specific-essentials-enabled',
+      tabsUnloaderPrefListener
+    );
     Services.prefs.addObserver('zen.glance.activation-method', tabsUnloaderPrefListener);
     window.addEventListener('unload', () => {
       Services.prefs.removeObserver('zen.tab-unloader.enabled', tabsUnloaderPrefListener);
       Services.prefs.removeObserver('zen.glance.enabled', tabsUnloaderPrefListener);
       Services.prefs.removeObserver('zen.glance.activation-method', tabsUnloaderPrefListener);
+      Services.prefs.removeObserver(
+        'zen.workspaces.container-specific-essentials-enabled',
+        tabsUnloaderPrefListener
+      );
     });
   },
 };
@@ -686,6 +848,11 @@ var zenMissingKeyboardShortcutL10n = {
   key_dom: 'zen-devtools-toggle-dom-shortcut',
   key_accessibility: 'zen-devtools-toggle-accessibility-shortcut',
 };
+
+var zenIgnoreKeyboardShortcutL10n = [
+  'zen-full-zoom-reduce-shortcut-alt-b',
+  'zen-full-zoom-reduce-shortcut-alt-a',
+];
 
 var gZenCKSSettings = {
   async init() {
@@ -750,6 +917,10 @@ var gZenCKSSettings = {
 
       const labelValue = zenMissingKeyboardShortcutL10n[keyID] ?? l10nID;
 
+      if (zenIgnoreKeyboardShortcutL10n.includes(labelValue)) {
+        continue;
+      }
+
       let fragment = window.MozXULElement.parseXULToFragment(`
         <hbox class="${ZEN_CKS_CLASS_BASE}">
           <label class="${ZEN_CKS_LABEL_CLASS}" for="${ZEN_CKS_CLASS_BASE}-${keyID}"></label>
@@ -809,6 +980,9 @@ var gZenCKSSettings = {
             sibling.remove();
           }
         }
+        if (target.classList.contains(`${ZEN_CKS_INPUT_FIELD_CLASS}-not-set`)) {
+          target.label = 'Not set';
+        }
       });
 
       const groupElem = wrapper.querySelector(`[data-group="${ZEN_CKS_GROUP_PREFIX}-${group}"]`);
@@ -845,8 +1019,16 @@ var gZenCKSSettings = {
 
     event.preventDefault();
 
-    let input = document.querySelector(`.${ZEN_CKS_INPUT_FIELD_CLASS}[${KEYBIND_ATTRIBUTE_KEY}="${this._currentActionID}"]`);
-    const modifiers = new KeyShortcutModifiers(event.ctrlKey, event.altKey, event.shiftKey, event.metaKey, false);
+    let input = document.querySelector(
+      `.${ZEN_CKS_INPUT_FIELD_CLASS}[${KEYBIND_ATTRIBUTE_KEY}="${this._currentActionID}"]`
+    );
+    const modifiers = new KeyShortcutModifiers(
+      event.ctrlKey,
+      event.altKey,
+      event.shiftKey,
+      event.metaKey,
+      false
+    );
     const modifiersActive = modifiers.areAnyActive();
 
     input.classList.remove(`${ZEN_CKS_INPUT_FIELD_CLASS}-not-set`);
@@ -858,6 +1040,7 @@ var gZenCKSSettings = {
     shortcut = shortcut.replace(/Ctrl|Control|Shift|Alt|Option|Cmd|Meta/, ''); // Remove all modifiers
 
     if (shortcut == 'Tab' && !modifiersActive) {
+      input.classList.remove(`${ZEN_CKS_INPUT_FIELD_CLASS}-not-set`);
       input.classList.remove(`${ZEN_CKS_INPUT_FIELD_CLASS}-editing`);
       this._latestValidKey = null;
       return;
@@ -885,6 +1068,9 @@ var gZenCKSSettings = {
         input.classList.remove(`${ZEN_CKS_INPUT_FIELD_CLASS}-editing`);
 
         this._editDone(this._latestValidKey, this._latestModifier);
+        if (this.name == 'Not set') {
+          input.classList.add(`${ZEN_CKS_INPUT_FIELD_CLASS}-not-set`);
+        }
         this._latestValidKey = null;
         this._latestModifier = null;
         input.classList.remove(`${ZEN_CKS_INPUT_FIELD_CLASS}-invalid`);
@@ -906,6 +1092,10 @@ var gZenCKSSettings = {
       this._latestValidKey = null;
       this._latestModifier = null;
       this._hasSafed = true;
+      const sibling = input.nextElementSibling;
+      if (sibling && sibling.classList.contains(`${ZEN_CKS_CLASS_BASE}-conflict`)) {
+        sibling.remove();
+      }
       return;
     }
 
@@ -1000,11 +1190,6 @@ Preferences.addAll([
     default: true,
   },
   {
-    id: 'zen.essentials.enabled',
-    type: 'bool',
-    default: true,
-  },
-  {
     id: 'zen.workspaces.container-specific-essentials-enabled',
     type: 'bool',
     default: false,
@@ -1023,5 +1208,15 @@ Preferences.addAll([
     id: 'zen.view.show-newtab-button-top',
     type: 'bool',
     default: true,
+  },
+  {
+    id: 'media.videocontrols.picture-in-picture.enabled',
+    type: 'bool',
+    default: true,
+  },
+  {
+    id: 'zen.workspaces.continue-where-left-off',
+    type: 'bool',
+    default: false,
   },
 ]);

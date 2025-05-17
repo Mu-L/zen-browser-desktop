@@ -1,5 +1,8 @@
 name: Windows Release Build
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
@@ -111,6 +114,7 @@ jobs:
           set -x
           mkdir -p ~/win-cross
           cd engine/
+          sudo apt-get install python3-launchpadlib
           sudo add-apt-repository ppa:savoury1/backports
           sudo apt-get update
           sudo apt-get install -y python3-pip autoconf \
@@ -161,6 +165,12 @@ jobs:
           echo Setup Visual Studio
           ./mach python --virtualenv build taskcluster/scripts/misc/get_vs.py build/vs/vs2022.yaml ~/win-cross/vs2022
 
+      - name: Import
+        if: ${{ !(inputs.generate-gpo && matrix.arch == 'aarch64') }}
+        env:
+          SURFER_COMPAT: ${{ matrix.arch }}
+        run: npm run import -- --verbose
+
       - name: Bootstrap
         if: ${{ !(inputs.generate-gpo && matrix.arch == 'aarch64') }}
         run: |
@@ -195,12 +205,6 @@ jobs:
           export CARGO_INCREMENTAL=0
           echo "" >> ../configs/common/mozconfig
           echo "export MOZ_WINDOWS_RS_DIR=$(pwd)/windows-0.58.0" >> ../configs/common/mozconfig
-
-      - name: Import
-        if: ${{ !(inputs.generate-gpo && matrix.arch == 'aarch64') }}
-        env:
-          SURFER_COMPAT: ${{ matrix.arch }}
-        run: npm run import -- --verbose
 
       - name: Build language packs
         if: ${{ !(inputs.generate-gpo && matrix.arch == 'aarch64') }}
@@ -280,21 +284,24 @@ jobs:
         if: ${{ !inputs.generate-gpo }}
         run: |
           set -x
-          if test "${{ matrix.arch }}" = "aarch64"; then
-            find engine/obj-aarch64-pc-windows-msvc/ -mindepth 1 -maxdepth 1 -type d -not -name 'dist' -exec rm -rf {} \;
-            find engine/obj-aarch64-pc-windows-msvc/ -mindepth 1 -maxdepth 1 -type f -not -name 'dist' -exec rm -f {} \;
-          else
-            find engine/obj-x86_64-pc-windows-msvc/ -mindepth 1 -maxdepth 1 -type d -not -name 'dist' -exec rm -rf {} \;
-            find engine/obj-x86_64-pc-windows-msvc/ -mindepth 1 -maxdepth 1 -type f -not -name 'dist' -exec rm -f {} \;
-          fi
+          mkdir obj-${{ matrix.arch }}-pc-windows-msvc/
+
+          rm -rf engine/obj-${{ matrix.arch }}-pc-windows-msvc/_tests
+          rm -rf engine/obj-${{ matrix.arch }}-pc-windows-msvc/config/autoconf.mk
+          rm -rf engine/obj-${{ matrix.arch }}-pc-windows-msvc/config.statusd/substs/
+          rm -rf engine/obj-${{ matrix.arch }}-pc-windows-msvc/dist/install
+
+          find engine/obj-${{ matrix.arch }}-pc-windows-msvc/dist -maxdepth 1 -type f -name "*.zip" -delete
+
+          cp -r --no-dereference engine/obj-${{ matrix.arch }}-pc-windows-msvc/* obj-${{ matrix.arch }}-pc-windows-msvc/ || true
 
       - name: Upload dist object
         if: ${{ !inputs.generate-gpo }}
         uses: actions/upload-artifact@v4
         with:
-          retention-days: 5
+          retention-days: 2
           name: windows-x64-obj-${{ matrix.arch == 'aarch64' && 'arm64' || matrix.arch }}
-          path: engine/obj-${{ matrix.arch == 'aarch64' && 'aarch64' || 'x86_64' }}-pc-windows-msvc/
+          path: obj-${{ matrix.arch }}-pc-windows-msvc
 
       - name: Upload artifact (if Twilight branch, binary)
         if: ${{ inputs.release-branch == 'twilight' && !inputs.generate-gpo }}

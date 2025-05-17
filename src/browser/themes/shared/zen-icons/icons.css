@@ -5,7 +5,8 @@
  */
 
 .subviewbutton,
-#zen-welcome-start-button {
+#zen-welcome-start-button,
+.zen-toast button {
   -moz-context-properties: fill, fill-opacity !important;
   fill: currentColor !important;
 }
@@ -22,10 +23,6 @@
 
 #zenSplitViewModifierActivateReallocation > image {
   list-style-image: url('move-tab.svg') !important;
-}
-
-.zen-tab-unsplit-button {
-  list-style-image: url('unpin.svg') !important;
 }
 
 #forward-button,
@@ -63,9 +60,7 @@
   list-style-image: url('sidebars-right.svg') !important;
 }
 
-#context_zenSplitTabs,
-#context-zenAddToWebPanel {
-  /* TODO: Add split view icon */
+#context_zenSplitTabs {
   --menu-image: url('sidebars-right.svg') !important;
 }
 
@@ -100,8 +95,16 @@
 
 #appMenu-passwords-button,
 #password-notification-icon,
-#PopupAutoComplete > richlistbox > richlistitem[originaltype='generatedPassword'] > .two-line-wrapper > .ac-site-icon,
-#PopupAutoComplete > richlistbox > richlistitem[originaltype='loginWithOrigin'] > .two-line-wrapper > .ac-site-icon,
+#PopupAutoComplete
+  > richlistbox
+  > richlistitem[originaltype='generatedPassword']
+  > .two-line-wrapper
+  > .ac-site-icon,
+#PopupAutoComplete
+  > richlistbox
+  > richlistitem[originaltype='loginWithOrigin']
+  > .two-line-wrapper
+  > .ac-site-icon,
 #PopupAutoComplete > richlistbox > richlistitem[originaltype='login'] > .ac-site-icon {
   list-style-image: url('passwords.svg') !important;
 }
@@ -131,13 +134,19 @@
 }
 
 #history-panelmenu,
-.urlbarView-row[source='history'] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
+.urlbarView-row[source='history']
+  > .urlbarView-row-inner
+  > .urlbarView-no-wrap
+  > .urlbarView-favicon,
 #urlbar-engine-one-off-item-history,
 #appMenu-history-button,
 #appMenu-library-history-button,
 #sidebar-switcher-history,
 #zen-history-button,
-#sidebar-box[sidebarcommand='viewHistorySidebar'] > #sidebar-header > #sidebar-switcher-target > #sidebar-icon {
+#sidebar-box[sidebarcommand='viewHistorySidebar']
+  > #sidebar-header
+  > #sidebar-switcher-target
+  > #sidebar-icon {
   list-style-image: url('history.svg') !important;
 }
 
@@ -166,10 +175,6 @@
 
 #context_zenOpenWorkspace {
   --menu-image: url('open.svg') !important;
-}
-
-#context_zenSetAsDefaultWorkspace {
-  --menu-image: url('bookmark-hollow.svg') !important;
 }
 
 #context_zenEditWorkspace,
@@ -271,7 +276,8 @@
 #restore-button,
 #fullscreen-button,
 #zen-glance-sidebar-open,
-#appMenu-fullscreen-button2 {
+#appMenu-fullscreen-button2,
+.zen-tab-unsplit-button {
   list-style-image: url('fullscreen.svg') !important;
 }
 
@@ -285,7 +291,10 @@
 #appMenu-bookmarks-button,
 #sidebar-switcher-bookmarks,
 #appMenu-library-bookmarks-button,
-#sidebar-box[sidebarcommand='viewBookmarksSidebar'] > #sidebar-header > #sidebar-switcher-target > #sidebar-icon {
+#sidebar-box[sidebarcommand='viewBookmarksSidebar']
+  > #sidebar-header
+  > #sidebar-switcher-target
+  > #sidebar-icon {
   list-style-image: url('bookmark-star-on-tray.svg') !important;
 }
 
@@ -311,7 +320,10 @@
   list-style-image: url('page-portrait.svg') !important;
 }
 
-#urlbar:not(.searchButton) > #urlbar-input-container > #identity-box[pageproxystate='invalid'] #identity-icon {
+#urlbar:not(.searchButton)
+  > #urlbar-input-container
+  > #identity-box[pageproxystate='invalid']
+  #identity-icon {
   list-style-image: url('search-glass.svg') !important;
 }
 
@@ -333,7 +345,8 @@
 }
 
 /* security */
-.identity-popup-security-connection {
+.identity-popup-security-connection,
+#appMenu-report-broken-site-button {
   list-style-image: url('security-broken.svg') !important;
 }
 
@@ -413,7 +426,7 @@
   list-style-image: url('customize.svg') !important;
 }
 
-#appmenu-zen-share-rice {
+#zen-copy-current-url-button {
   list-style-image: url('share.svg');
 }
 
@@ -436,7 +449,10 @@
   list-style-image: url('split.svg');
 }
 
-#sidebar-box[sidebarcommand='viewTabsSidebar'] > #sidebar-header > #sidebar-switcher-target > #sidebar-icon,
+#sidebar-box[sidebarcommand='viewTabsSidebar']
+  > #sidebar-header
+  > #sidebar-switcher-target
+  > #sidebar-icon,
 #sidebar-switcher-tabs {
   list-style-image: url('send-to-device.svg') !important;
 }
@@ -600,7 +616,10 @@
   background-image: url('reload-to-stop.svg') !important;
 }
 
-#stop-reload-button[animate] > #reload-button > .toolbarbutton-animatable-box > .toolbarbutton-animatable-image,
+#stop-reload-button[animate]
+  > #reload-button
+  > .toolbarbutton-animatable-box
+  > .toolbarbutton-animatable-image,
 #zen-sidebar-web-panel-reload[animate]
   > #zen-sidebar-web-panel-reload-button
   > .toolbarbutton-animatable-box
@@ -638,7 +657,14 @@
   ),
 :not(:not(menubar) > menu, #ContentSelectDropdown)
   > menupopup
-  > menu:not(.menu-iconic, [type='checkbox'], [type='radio'], .in-menulist, .in-menulist menu, .unified-nav-current),
+  > menu:not(
+    .menu-iconic,
+    [type='checkbox'],
+    [type='radio'],
+    .in-menulist,
+    .in-menulist menu,
+    .unified-nav-current
+  ),
 #toggle_toolbar-menubar,
 #PanelUI-history toolbarbutton,
 #unified-extensions-context-menu menuitem {
@@ -975,23 +1001,23 @@ menuitem[id='placesContext_showAllBookmarks'],
 }
 
 #appMenuRecentlyClosedTabs {
-  --menu-image: url('container-tab.svg');
+  list-style-image: url('container-tab.svg') !important;
 }
 
 #appMenuClearRecentHistory {
-  --menu-image: url('edit-delete.svg');
+  list-style-image: url('edit-delete.svg') !important;
 }
 
 #appMenuRecentlyClosedWindows {
-  --menu-image: url('window.svg');
+  list-style-image: url('window.svg') !important;
 }
 
 #appMenuSearchHistory {
-  --menu-image: url('search-glass.svg');
+  list-style-image: url('search-glass.svg') !important;
 }
 
 #PanelUI-historyMore {
-  --menu-image: url('manage.svg');
+  list-style-image: url('manage.svg') !important;
 }
 
 menuitem[id='placesContext_new:bookmark'],
@@ -1104,6 +1130,10 @@ menuitem[id='placesContext_new:separator'] {
   --menu-image: url('arrow-up.svg');
 }
 
+#alltabs-button {
+  list-style-image: url('chrome://browser/skin/tabs.svg') !important;
+}
+
 :not(:not(menubar) > menu, #ContentSelectDropdown)
   > menupopup
   > menuitem:not(
@@ -1116,10 +1146,18 @@ menuitem[id='placesContext_new:separator'] {
   ),
 :not(:not(menubar) > menu, #ContentSelectDropdown)
   > menupopup
-  > menu:not(.menu-iconic, [type='checkbox'], [type='radio'], .in-menulist, .in-menulist menu, .unified-nav-current),
+  > menu:not(
+    .menu-iconic,
+    [type='checkbox'],
+    [type='radio'],
+    .in-menulist,
+    .in-menulist menu,
+    .unified-nav-current
+  ),
 :not(:not(menubar) > menu, #ContentSelectDropdown) > menupopup > menucaption {
   padding-inline-start: calc(
-    var(--fp-contextmenu-menuitem-padding-inline) + 16px + var(--fp-contextmenu-menuicon-margin-inline)
+    var(--fp-contextmenu-menuitem-padding-inline) + 16px +
+      var(--fp-contextmenu-menuicon-margin-inline)
   ) !important;
 }
 
@@ -1146,43 +1184,61 @@ menupopup > menuitem:is([type='checkbox']) .menu-iconic-left {
 }
 
 #zen-media-playpause-button {
-  list-style-image: url('media-play.svg') !important;
+  list-style-image: url('media-play.svg');
 }
 
 #zen-media-controls-toolbar.playing #zen-media-playpause-button {
-  list-style-image: url('media-pause.svg') !important;
+  list-style-image: url('media-pause.svg');
 }
 
 #zen-media-nexttrack-button {
-  list-style-image: url('media-next.svg') !important;
+  list-style-image: url('media-next.svg');
 }
 
 #zen-media-previoustrack-button {
-  list-style-image: url('media-previous.svg') !important;
+  list-style-image: url('media-previous.svg');
 }
 
 #zen-media-controls-toolbar[muted] #zen-media-mute-button {
-  list-style-image: url('media-mute.svg') !important;
+  list-style-image: url('media-mute.svg');
 }
 
 #zen-media-mute-button {
-  list-style-image: url('media-unmute.svg') !important;
+  list-style-image: url('media-unmute.svg');
 }
 
 #zen-media-close-button {
-  list-style-image: url('close.svg') !important;
+  list-style-image: url('close.svg');
 }
 
 #zen-media-focus-button:hover {
-  list-style-image: url('screen.svg') !important;
+  list-style-image: url('screen.svg');
 }
 
 #zen-media-close-button {
-  list-style-image: url('close.svg') !important;
+  list-style-image: url('close.svg');
+}
+
+#zen-media-mute-mic-button {
+  list-style-image: url('microphone-fill.svg');
+}
+
+#zen-media-controls-toolbar[mic-muted] #zen-media-mute-mic-button {
+  list-style-image: url('microphone-blocked-fill.svg');
+  fill: rgb(224, 41, 29);
+}
+
+#zen-media-mute-camera-button {
+  list-style-image: url('video-fill.svg');
+}
+
+#zen-media-controls-toolbar[camera-muted] #zen-media-mute-camera-button {
+  list-style-image: url('video-blocked-fill.svg');
+  fill: rgb(224, 41, 29);
 }
 
 #zen-media-pip-button {
-  list-style-image: url('chrome://global/skin/media/picture-in-picture-open.svg') !important;
+  list-style-image: url('chrome://global/skin/media/picture-in-picture-open.svg');
 }
 
 /* Tab folders */

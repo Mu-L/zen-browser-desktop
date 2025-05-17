@@ -11,3 +11,6 @@ windsign-temp/
 venv/
 
 !firefox-cache/
+win-cross/
+
+!firefox-patches/

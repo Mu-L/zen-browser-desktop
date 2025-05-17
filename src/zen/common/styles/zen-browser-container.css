@@ -1,0 +1,32 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+:root:not([inDOMFullscreen='true']):not([chromehidden~='location']):not([chromehidden~='toolbar']) {
+  & #tabbrowser-tabbox #tabbrowser-tabpanels .browserSidebarContainer,
+  #tabbrowser-tabpanels[dragging-split='true'] {
+    width: -moz-available;
+    position: relative;
+    overflow: hidden;
+
+    :root:not([zen-no-padding='true']) & {
+      border-radius: var(--zen-native-inner-radius);
+      box-shadow: var(--zen-big-shadow);
+    }
+
+    & browser[transparent='true'] {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  @media -moz-pref('zen.view.experimental-rounded-view') {
+    #tabbrowser-tabpanels {
+      :root:not([zen-no-padding='true']) & {
+        mix-blend-mode: multiply;
+        -moz-osx-font-smoothing: grayscale;
+        isolation: isolate;
+      }
+    }
+  }
+}

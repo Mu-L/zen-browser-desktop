@@ -12,9 +12,7 @@
   mirror: always
 #endif
 
-#ifdef XP_WIN
-- name: zen.widget.windows.acrylic
+- name: zen.haptic-feedback.enabled
   type: bool
   value: true
   mirror: always
-#endif

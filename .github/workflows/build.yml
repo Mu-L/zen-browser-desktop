@@ -475,7 +475,18 @@ jobs:
     if: ${{ inputs.create_release || inputs.update_branch == 'twilight' }}
     permissions: write-all
     name: Release
-    needs: [build-data, linux, windows-step-3, check-release, mac-uni, appimage, source, lint, stop-self-hosted]
+    needs:
+      [
+        build-data,
+        linux,
+        windows-step-3,
+        check-release,
+        mac-uni,
+        appimage,
+        source,
+        lint,
+        stop-self-hosted,
+      ]
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.update_branch == 'release' && 'Deploy-Release' || 'Deploy-Twilight' }}
@@ -490,9 +501,6 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
 
-      - name: List
-        run: find .
-
       - name: Checkout updates repository
         uses: actions/checkout@v4
         with:
@@ -503,7 +511,7 @@ jobs:
       - name: Download object files
         if: ${{ inputs.update_branch == 'release' }}
         run: |
-          git clone https://github.com/zen-browser/windows-binaries.git .github/workflows/object
+          git clone https://github.com/zen-browser/windows-binaries.git .github/workflows/object --depth 1
 
       - name: Copy update manifests
         env:
