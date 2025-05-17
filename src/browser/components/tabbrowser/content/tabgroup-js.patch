@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tabgroup.js b/browser/components/tabbrowser/content/tabgroup.js
-index dd6bae196ea7af87eb9fd4fb10082f6caaa84964..e637b1d97234c9f59439eaeeac769b010b1ea230 100644
+index dd6bae196ea7af87eb9fd4fb10082f6caaa84964..6d8c7374678bbc52c615d9dd6e54e1b17f7057d2 100644
 --- a/browser/components/tabbrowser/content/tabgroup.js
 +++ b/browser/components/tabbrowser/content/tabgroup.js
 @@ -13,10 +13,13 @@
@@ -47,7 +47,7 @@ index dd6bae196ea7af87eb9fd4fb10082f6caaa84964..e637b1d97234c9f59439eaeeac769b01
 -      return Array.from(this.children).filter(node => node.matches("tab"));
 +     get tabs() {
 +      // add other group tabs if they are under this group
-+      let childs = Array.from(this.querySelector('.tab-group-container').children);
++      let childs = Array.from(this.querySelector('.tab-group-container')?.children ?? []);
 +      for (let item of childs) {
 +        if (item.tagName == "tab-group") {
 +          childs = childs.concat(item.tabs);

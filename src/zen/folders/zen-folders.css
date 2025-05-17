@@ -186,6 +186,7 @@ tab-group:not([split-view-group]) {
     z-index: 1000 !important;
     --tab-group-color-pale: transparent !important;
     --tab-group-color: transparent !important;
+    padding-block-end: 0 !important;
     margin: 0 !important;
     height: 36px !important;
     border-radius: var(--border-radius-medium) !important;
@@ -200,10 +201,12 @@ tab-group:not([split-view-group]) {
     }
 
     .tab-group-folder-icon {
-      width: 18px;
-      height: 18px;
-      margin-inline-end: var(--toolbarbutton-inner-padding) !important;
-      margin-inline-start: calc(var(--toolbarbutton-inner-padding) / 4) !important;
+      width: 28px;
+      height: 28px;
+      margin-inline-end: calc(var(--toolbarbutton-inner-padding) / 3) !important;
+      -moz-context-properties: fill, stroke, fill-opacity, stroke-opacity;
+      stroke: currentColor;
+      fill: var(--zen-colors-primary);
     }
 
     &:hover {
