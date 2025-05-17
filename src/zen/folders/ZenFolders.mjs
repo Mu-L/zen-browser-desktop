@@ -14,7 +14,9 @@
       window.addEventListener('TabUnpinned', this.#onTabUnpinned.bind(this));
       window.addEventListener('TabGroupExpand', this.#onTabGroupExpand.bind(this));
       window.addEventListener('TabGroupCollapse', this.#onTabGroupCollapse.bind(this));
-      document.getElementById('zen-context-menu-new-folder').addEventListener('command', this.#onNewFolder.bind(this));
+      document
+        .getElementById('zen-context-menu-new-folder')
+        .addEventListener('command', this.#onNewFolder.bind(this));
     }
 
     #initContextMenu() {
@@ -135,7 +137,9 @@
         gBrowser.pinTab(tab);
       }
       const group = gBrowser.addTabGroup(tabs, {
-        insertBefore: ZenWorkspaces.pinnedTabsContainer.querySelector('.vertical-pinned-tabs-container-separator'),
+        insertBefore: gZenWorkspaces.pinnedTabsContainer.querySelector(
+          '.vertical-pinned-tabs-container-separator'
+        ),
         label: 'New Folder',
       });
       group.pinned = true;
