@@ -160,7 +160,7 @@ tab-group[split-view-group] .tab-group-line {
   display: none !important;
 }
 
-tab-group:not([split-view-group]) {
+zen-folder {
   display: flex !important;
   flex-direction: column !important;
   @media not (-moz-bool-pref: 'zen.view.sidebar-expanded') {

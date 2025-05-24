@@ -1,75 +1,11 @@
 diff --git a/browser/components/tabbrowser/content/tabgroup.js b/browser/components/tabbrowser/content/tabgroup.js
-index dd6bae196ea7af87eb9fd4fb10082f6caaa84964..6d8c7374678bbc52c615d9dd6e54e1b17f7057d2 100644
+index 6dc774ea335b0c5dba7dcf76cdb23728faae1343..75cd0f0471ca350852e9eb810b30e60d52f14aab 100644
 --- a/browser/components/tabbrowser/content/tabgroup.js
 +++ b/browser/components/tabbrowser/content/tabgroup.js
-@@ -13,10 +13,13 @@
- 
-   class MozTabbrowserTabGroup extends MozXULElement {
-     static markup = `
--      <vbox class="tab-group-label-container" pack="center">
-+      <hbox class="tab-group-label-container" pack="center">
-+        <image class="tab-group-folder-icon"/>
-         <label class="tab-group-label" role="button"/>
--      </vbox>
--      <html:slot/>
-+      </hbox>
-+      <html:div class="tab-group-container">
-+        <html:div class="zen-tab-group-start" />
-+      </html:div>
-       `;
- 
-     /** @type {string} */
-@@ -65,7 +68,7 @@
-       this.#labelElement.container = gBrowser.tabContainer;
-       this.#labelElement.group = this;
- 
--      this.#labelElement.addEventListener("click", this);
-+      this.querySelector(".tab-group-label-container").addEventListener("click", this);
-       this.#labelElement.addEventListener("contextmenu", e => {
-         e.preventDefault();
-         gBrowser.tabGroupMenu.openEditModal(this);
-@@ -76,6 +79,10 @@
-       this.#updateCollapsedAriaAttributes();
- 
-       this.addEventListener("TabSelect", this);
-+
-+      this.appendChild = function (child) {
-+        this.querySelector('.tab-group-container').appendChild(child);
-+      }
+@@ -395,5 +395,6 @@
      }
+   }
  
-     disconnectedCallback() {
-@@ -224,8 +231,22 @@
-       this.#labelElement?.setAttribute("aria-expanded", ariaExpanded);
-     }
- 
--    get tabs() {
--      return Array.from(this.children).filter(node => node.matches("tab"));
-+     get tabs() {
-+      // add other group tabs if they are under this group
-+      let childs = Array.from(this.querySelector('.tab-group-container')?.children ?? []);
-+      for (let item of childs) {
-+        if (item.tagName == "tab-group") {
-+          childs = childs.concat(item.tabs);
-+        }
-+      }
-+      return childs.filter(node => node.matches("tab"));
-+    }
-+
-+    get group() {
-+      if (this.parentElement?.parentElement?.tagName == "tab-group") {
-+        return this.parentElement.parentElement;
-+      }
-+      return null;
-     }
- 
-     /**
-@@ -304,7 +325,7 @@
-      * @param {PointerEvent} event
-      */
-     on_click(event) {
--      if (event.target === this.#labelElement && event.button === 0) {
-+      if (event.target.closest('.tab-group-label-container') && event.button === 0) {
-         event.preventDefault();
-         this.collapsed = !this.collapsed;
-         gBrowser.tabGroupMenu.close();
++  window.MozTabbrowserTabGroup = MozTabbrowserTabGroup;
+   customElements.define("tab-group", MozTabbrowserTabGroup);
+ }

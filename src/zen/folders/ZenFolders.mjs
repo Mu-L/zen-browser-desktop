@@ -1,4 +1,31 @@
 {
+  class ZenFolder extends MozTabbrowserTabGroup {
+    constructor() {
+      super();
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+    }
+
+    /**
+     * Returns the group this folder belongs to.
+     * @returns {MozTabbrowserTabGroup|null} The group this folder belongs to, or null if it is not part of a group.
+     **/
+    get group() {
+      if (gBrowser.isTabGroup(this.parentElement?.parentElement)) {
+        return this.parentElement.parentElement;
+      }
+      return null;
+    }
+
+    get isZenFolder() {
+      return true;
+    }
+  }
+
+  MozXULElement.registerXULElement('zen-folder', ZenFolder);
+
   class ZenFolders extends ZenPreloadedFeature {
     init() {
       this.#initContextMenu();
@@ -133,16 +160,32 @@
 
     #onNewFolder(event) {
       const tabs = gBrowser.selectedTabs;
+      return this.createFolder(tabs);
+    }
+
+    createFolder(tabs, options = {}) {
       for (const tab of tabs) {
         gBrowser.pinTab(tab);
       }
-      const group = gBrowser.addTabGroup(tabs, {
-        insertBefore: gZenWorkspaces.pinnedTabsContainer.querySelector(
-          '.vertical-pinned-tabs-container-separator'
-        ),
-        label: 'New Folder',
-      });
-      group.pinned = true;
+      const insertBefore = options.insertBefore || gZenWorkspaces.pinnedTabsContainer.querySelector(
+        '.vertical-pinned-tabs-container-separator'
+      );
+      const label = options.label || 'New Folder';
+      const folder = document.createXULElement('zen-folder',  { is: "zen-folder" });
+      let id = options.id;
+      if (!id) {
+        // Note: If this changes, make sure to also update the
+        // getExtTabGroupIdForInternalTabGroupId implementation in
+        // browser/components/extensions/parent/ext-browser.js.
+        // See: Bug 1960104 - Improve tab group ID generation in addTabGroup
+        id = `${Date.now()}-${Math.round(Math.random() * 100)}`;
+      }
+      folder.id = id;
+      folder.label = label;
+      folder.collapsed = !!options.collapsed;
+      folder.pinned = true;
+      insertBefore.parentNode.insertBefore(folder, insertBefore);
+      return folder;
     }
 
     async #onTabGroupCollapse(event) {
