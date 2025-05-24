@@ -9,7 +9,7 @@ index d5aa64842a35c6697263c63fd3a0571b64b01344..6943dc7f1d3d95ab1da315cbdbda0b03
 +    get _numVisiblePinTabsWithoutCollapsed() {
 +      let i = 0;
 +      for (let item of this.tabContainer.ariaFocusableItems) {
-+        if (!!item?.classList?.contains("tab-group-label") && item.closest("tab-folder").pinned) {
++        if (!!item?.classList?.contains("tab-group-label") && item.closest("tab-group").pinned) {
 +          i += 1;
 +          continue;
 +        }
@@ -261,6 +261,8 @@ index d5aa64842a35c6697263c63fd3a0571b64b01344..6943dc7f1d3d95ab1da315cbdbda0b03
 +      if (forSplitView) {
 +        group.setAttribute('split-view-group', true);
 +      }
++      group.essential = tabs.some(tab => tab.hasAttribute("essential"));
++      group.pinned = group.essential || tabs.some(tab => tab.pinned);
 +      ((insertBefore?.group ?? insertBefore).parentNode).insertBefore(
          group,
          insertBefore?.group ?? insertBefore
