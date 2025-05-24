@@ -168,11 +168,13 @@
       for (const tab of tabs) {
         gBrowser.pinTab(tab);
       }
-      const insertBefore = options.insertBefore || gZenWorkspaces.pinnedTabsContainer.querySelector(
-        '.vertical-pinned-tabs-container-separator'
-      );
+      const insertBefore =
+        options.insertBefore ||
+        gZenWorkspaces.pinnedTabsContainer.querySelector(
+          '.vertical-pinned-tabs-container-separator'
+        );
       const label = options.label || 'New Folder';
-      const folder = document.createXULElement('zen-folder',  { is: "zen-folder" });
+      const folder = document.createXULElement('zen-folder', { is: 'zen-folder' });
       let id = options.id;
       if (!id) {
         // Note: If this changes, make sure to also update the
