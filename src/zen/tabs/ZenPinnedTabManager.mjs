@@ -89,16 +89,14 @@
       const iconUrl = url ?? tab.iconImage.src;
       if (!iconUrl) {
         try {
-          setTimeout(() => {
+          setTimeout(async () => {
             try {
-              PlacesUtils.favicons.getFaviconURLForPage(
-                tab.linkedBrowser?.currentURI,
-                (url) => {
-                  if (url) gBrowser.setIcon(tab, url.spec);
-                },
-
-                0
+              let favicon = await PlacesUtils.favicons.getFaviconForPage(
+                Services.io.newURI(pin.url)
               );
+              if (favicon) {
+                gBrowser.setIcon(tab, favicon.dataURI);
+              }
             } catch (error) {
               console.warn('Error getting favicon URL:', error);
             }
@@ -151,7 +149,7 @@
           document.documentElement.getAttribute('chromehidden')?.includes('menubar')
         );
       }
-      return this._enabled;
+      return this._enabled && !gZenWorkspaces.privateWindowOrDisabled;
     }
 
     async _refreshPinnedTabs({ init = false } = {}) {
@@ -169,7 +167,7 @@
         const enhancedPins = await Promise.all(
           pins.map(async (pin) => {
             try {
-              const image = await this.getFaviconAsBase64(Services.io.newURI(pin.url).spec);
+              const image = await this.getFaviconAsBase64(Services.io.newURI(pin.url));
               return {
                 ...pin,
                 iconUrl: image || null,
@@ -236,8 +234,8 @@
           continue;
         }
 
-        if (pin.title && (pin.editedTitle || tab.hasAttribute('zen-has-static-label'))) {
-          tab.removeAttribute('zen-has-static-label'); // So we can set it again
+        tab.removeAttribute('zen-has-static-label'); // So we can set it again
+        if (pin.title && pin.editedTitle) {
           gBrowser._setTabLabel(tab, pin.title, { beforeTabOpen: true });
           tab.setAttribute('zen-has-static-label', 'true');
         }
@@ -399,10 +397,10 @@
       );
     }
 
-    _onTabClick(e) {
+    async _onTabClick(e) {
       const tab = e.target?.closest('tab');
       if (e.button === 1 && tab) {
-        this._onCloseTabShortcut(e, tab);
+        await this._onCloseTabShortcut(e, tab);
       }
     }
 
@@ -535,7 +533,7 @@
       }
     }
 
-    _onCloseTabShortcut(
+    async _onCloseTabShortcut(
       event,
       selectedTab = gBrowser.selectedTab,
       behavior = lazy.zenPinnedTabCloseShortcutBehavior
@@ -556,22 +554,17 @@
         case 'unload-switch':
         case 'reset-switch':
         case 'switch':
-          let { permitUnload } = selectedTab.linkedBrowser?.permitUnload();
-          if (!permitUnload) {
-            return;
-          }
-          this._handleTabSwitch(selectedTab);
-          if (behavior.includes('reset')) {
-            this._resetTabToStoredState(selectedTab);
-          }
           if (behavior.includes('unload')) {
             if (selectedTab.hasAttribute('glance-id')) {
               break;
             }
-            // Do not unload about:* pages
-            if (!selectedTab.linkedBrowser?.currentURI.spec.startsWith('about:')) {
-              gZenTabUnloader.explicitUnloadTabs([selectedTab], { permitUnload });
-            }
+            await gBrowser.explicitUnloadTabs([selectedTab]);
+          }
+          if (selectedTab.selected) {
+            this._handleTabSwitch(selectedTab);
+          }
+          if (behavior.includes('reset')) {
+            this._resetTabToStoredState(selectedTab);
           }
           break;
         case 'reset':
@@ -640,23 +633,14 @@
 
     async getFaviconAsBase64(pageUrl) {
       try {
-        // Get the favicon data
-        const faviconData = await PlacesUtils.promiseFaviconData(pageUrl);
-
-        // The data comes as an array buffer, we need to convert it to base64
-        // First create a byte array from the data
-        const array = new Uint8Array(faviconData.data);
-
-        // Convert to base64
-        const base64String = btoa(
-          Array.from(array)
-            .map((b) => String.fromCharCode(b))
-            .join('')
-        );
-
-        // Return as a proper data URL
-        return `data:${faviconData.mimeType};base64,${base64String}`;
+        const faviconData = await PlacesUtils.favicons.getFaviconForPage(pageUrl);
+        if (!faviconData) {
+          // empty favicon
+          return 'data:image/png;base64,';
+        }
+        return faviconData.dataURI;
       } catch (ex) {
+        console.error('Failed to get favicon:', ex);
         // console.error("Failed to get favicon:", ex);
         return `page-icon:${pageUrl}`; // Use this as a fallback
       }
@@ -671,10 +655,12 @@
         : TabContextMenu.contextTab.multiselected
           ? gBrowser.selectedTabs
           : [TabContextMenu.contextTab];
+      let movedAll = true;
       for (let i = 0; i < tabs.length; i++) {
         let tab = tabs[i];
         const section = gZenWorkspaces.getEssentialsSection(tab);
         if (section.children.length >= this.MAX_ESSENTIALS_TABS) {
+          movedAll = false;
           continue;
         }
         if (tab.hasAttribute('zen-essential')) {
@@ -716,6 +702,7 @@
         tab.dispatchEvent(event);
       }
       gZenUIManager.updateTabsToolbar();
+      return movedAll;
     }
 
     removeEssentials(tab, unpin = true) {
@@ -749,6 +736,9 @@
     }
 
     _insertItemsIntoTabContextMenu() {
+      if (!this.enabled) {
+        return;
+      }
       const elements = window.MozXULElement.parseXULToFragment(`
             <menuseparator id="context_zen-pinned-tab-separator" hidden="true"/>
             <menuitem id="context_zen-replace-pinned-url-with-current"
@@ -791,6 +781,7 @@
 
     updatePinnedTabContextMenu(contextTab) {
       if (!this.enabled) {
+        document.getElementById('context_pinTab').hidden = true;
         return;
       }
       const isVisible = contextTab.pinned && !contextTab.multiselected;
@@ -813,6 +804,9 @@
     }
 
     moveToAnotherTabContainerIfNecessary(event, movingTabs) {
+      if (!this.enabled) {
+        return false;
+      }
       try {
         const pinnedTabsTarget =
           event.target.closest('.zen-workspace-pinned-tabs-section') ||
@@ -834,6 +828,7 @@
 
         let isVertical = this.expandedSidebarMode;
         let moved = false;
+        let hasActuallyMoved;
         for (const draggedTab of movingTabs) {
           let isRegularTabs = false;
           // Check for pinned tabs container
@@ -852,9 +847,9 @@
               !draggedTab.hasAttribute('zen-essential') &&
               !draggedTab?.group?.hasAttribute('split-view-group')
             ) {
-              this.addToEssentials(draggedTab);
               moved = true;
               isVertical = false;
+              hasActuallyMoved = this.addToEssentials(draggedTab);
             }
           }
           // Check for normal tabs container
@@ -870,8 +865,12 @@
             }
           }
 
+          if (typeof hasActuallyMoved === 'undefined') {
+            hasActuallyMoved = moved;
+          }
+
           // If the tab was moved, adjust its position relative to the target tab
-          if (moved) {
+          if (hasActuallyMoved) {
             const targetTab = event.target.closest('.tabbrowser-tab');
             if (targetTab) {
               const rect = targetTab.getBoundingClientRect();
@@ -1006,6 +1005,9 @@
     }
 
     applyDragoverClass(event, draggedTab) {
+      if (!this.enabled) {
+        return;
+      }
       const pinnedTabsTarget = event.target.closest('.zen-workspace-pinned-tabs-section');
       const essentialTabsTarget = event.target.closest('.zen-essentials-container');
       const tabsTarget = event.target.closest('.zen-workspace-normal-tabs-section');

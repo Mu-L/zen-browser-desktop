@@ -83,17 +83,12 @@
       }
     }
 
-    getTabPosition(tab) {
-      return tab._tPos;
-    }
-
     createBrowserElement(url, currentTab, existingTab = null) {
       const newTabOptions = {
         userContextId: currentTab.getAttribute('usercontextid') || '',
         skipBackgroundNotify: true,
         insertTab: true,
         skipLoad: false,
-        index: this.getTabPosition(currentTab) + 1,
       };
       currentTab._selected = true;
       const newUUID = gZenUIManager.generateUuidv4();
@@ -294,9 +289,7 @@
       this.closingGlance = true;
       this._animating = true;
 
-      gBrowser.zenInsertTabAtIndex(this.#currentTab, {
-        index: this.getTabPosition(this.#currentParentTab),
-      });
+      gBrowser.moveTabAfter(this.#currentTab, this.#currentParentTab);
 
       let quikcCloseZen = false;
       if (onTabClose) {
@@ -365,6 +358,13 @@
 
             if (!onTabClose) {
               this.#currentParentTab._visuallySelected = false;
+            }
+
+            if (
+              this.#currentParentTab.linkedBrowser &&
+              !this.#currentParentTab.hasAttribute('split-view')
+            ) {
+              this.#currentParentTab.linkedBrowser.zenModeActive = false;
             }
 
             // reset everything
@@ -445,7 +445,7 @@
           .classList.remove('zen-glance-background');
       }
       if (!justAnimateParent && this.overlay) {
-        if (parentHasBrowser) {
+        if (parentHasBrowser && !this.#currentParentTab.hasAttribute('split-view')) {
           if (closeParentTab) {
             this.#currentParentTab.linkedBrowser
               .closest('.browserSidebarContainer')
@@ -622,7 +622,7 @@
       this.animatingFullOpen = true;
       this.#currentTab.setAttribute('zen-dont-split-glance', true);
 
-      gBrowser.zenInsertTabAtIndex(this.#currentTab, this.getTabPosition(this.#currentTab));
+      gBrowser.moveTabAfter(this.#currentTab, this.#currentParentTab);
 
       this.#currentTab.removeAttribute('zen-glance-tab');
       this._clearContainerStyles(this.browserWrapper);
@@ -705,13 +705,34 @@
     }
 
     getTabOrGlanceParent(tab) {
-      if (tab.hasAttribute('glance-id')) {
+      if (tab?.hasAttribute('glance-id')) {
         const parentTab = this.#glances.get(tab.getAttribute('glance-id')).parentTab;
         if (parentTab) {
           return parentTab;
         }
       }
       return tab;
+    }
+
+    shouldShowDeckSelected(currentPanel, oldPanel) {
+      // Dont remove if it's a glance background and current panel corresponds to a glance
+      const currentBrowser = currentPanel?.querySelector('browser');
+      const oldBrowser = oldPanel?.querySelector('browser');
+      if (!currentBrowser || !oldBrowser) {
+        return false;
+      }
+      const currentTab = gBrowser.getTabForBrowser(currentBrowser);
+      const oldTab = gBrowser.getTabForBrowser(oldBrowser);
+      if (currentTab && oldTab) {
+        const currentGlanceID = currentTab.getAttribute('glance-id');
+        const oldGlanceID = oldTab.getAttribute('glance-id');
+        if (currentGlanceID && oldGlanceID) {
+          return (
+            currentGlanceID === oldGlanceID && oldPanel.classList.contains('zen-glance-background')
+          );
+        }
+      }
+      return false;
     }
   }
 

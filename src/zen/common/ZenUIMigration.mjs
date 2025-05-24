@@ -6,7 +6,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 class ZenUIMigration {
   PREF_NAME = 'zen.migration.version';
-  MIGRATION_VERSION = 2;
+  MIGRATION_VERSION = 4;
 
   init(isNewProfile, win) {
     if (!isNewProfile) {
@@ -29,6 +29,12 @@ class ZenUIMigration {
     }
     if (this._migrationVersion < 2) {
       this._migrateV2(win);
+    }
+    if (this._migrationVersion < 3) {
+      this._migrateV3(win);
+    }
+    if (this._migrationVersion < 4) {
+      this._migrateV4(win);
     }
   }
 
@@ -66,6 +72,25 @@ class ZenUIMigration {
       Services.prefs.setIntPref('widget.windows.mica.toplevel-backdrop', 2);
       Services.prefs.clearUserPref('zen.widget.windows.acrylic');
     }
+  }
+
+  _migrateV3(win) {
+    const kArea = win.CustomizableUI.AREA_TABSTRIP;
+    const widgets = win.CustomizableUI.getWidgetsInArea(kArea);
+    for (const widget of widgets) {
+      const widgetId = widget.id;
+      if (widgetId === 'tabbrowser-tabs') {
+        continue;
+      }
+      win.CustomizableUI.removeWidgetFromArea(widgetId);
+    }
+  }
+
+  _migrateV4(win) {
+    Services.prefs.setBoolPref(
+      'browser.tabs.unloadOnLowMemory',
+      Services.prefs.getBoolPref('zen.tab-unloader.enabled', true)
+    );
   }
 }
 

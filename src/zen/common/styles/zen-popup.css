@@ -35,12 +35,17 @@
   --uc-permission-item-margin-block: 4px;
   --uc-permission-item-padding-inline: 16px;
   --zen-panel-separator-width: 1px;
+
+  --zen-contextmenu-menuitem-padding-inline: 10px;
+  --zen-contextmenu-menuicon-margin-inline: 12px;
+  --zen-contextmenu-menuitem-margin: 0px 2px;
 }
 
 menupopup,
 panel {
   --panel-background: var(--arrowpanel-background);
   --panel-border-radius: var(--zen-native-inner-radius);
+  --menuitem-padding: 6px 5px !important;
 }
 
 /* split-view popup */
@@ -362,7 +367,7 @@ menuseparator {
     gap: 10px;
     z-index: 1000;
     padding: var(--zen-toast-padding);
-    border-radius: calc(var(--zen-native-inner-radius) + 8px);
+    border-radius: calc(var(--zen-native-inner-radius) + 6px);
     background: linear-gradient(
       170deg,
       var(--zen-primary-color) -40%,
@@ -393,11 +398,12 @@ menuseparator {
     }
 
     & button {
+      color-scheme: dark;
       width: min-content;
       padding: 0 12px !important;
       min-width: unset !important;
       margin: 0px !important;
-      border-radius: calc(var(--zen-native-inner-radius) + 4px) !important;
+      border-radius: calc(var(--zen-native-inner-radius) + 2px) !important;
 
       :root[zen-right-side='true'] & {
         order: -1;
