@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tabbrowser.js b/browser/components/tabbrowser/content/tabbrowser.js
-index d5aa64842a35c6697263c63fd3a0571b64b01344..bb2fa534e387d8d935cc2812a7ce115916ba94db 100644
+index d5aa64842a35c6697263c63fd3a0571b64b01344..475838b0fcfab3074116111d971d77c209d70f44 100644
 --- a/browser/components/tabbrowser/content/tabbrowser.js
 +++ b/browser/components/tabbrowser/content/tabbrowser.js
 @@ -413,11 +413,41 @@
@@ -9,7 +9,7 @@ index d5aa64842a35c6697263c63fd3a0571b64b01344..bb2fa534e387d8d935cc2812a7ce1159
 +    get _numVisiblePinTabsWithoutCollapsed() {
 +      let i = 0;
 +      for (let item of this.tabContainer.ariaFocusableItems) {
-+        if (!!item?.classList?.contains("tab-group-label") && item.closest("tab-folder"))
++        if (!!item?.classList?.contains("tab-group-label") && item.closest("tab-folder")) {
 +          i += 1;
 +          continue;
 +        }
@@ -546,6 +546,15 @@ index d5aa64842a35c6697263c63fd3a0571b64b01344..bb2fa534e387d8d935cc2812a7ce1159
          aTab.selected ||
          aTab.closing ||
          // Tabs that are sharing the screen, microphone or camera cannot be hidden.
+@@ -5909,7 +6035,7 @@
+      *   `true` if element is a `<tab-group>`
+      */
+     isTabGroup(element) {
+-      return !!(element?.tagName == "tab-group");
++      return !!(element?.tagName == "tab-group" || element?.tagName == "zen-folder");
+     }
+ 
+     /**
 @@ -5986,7 +6112,7 @@
  
        // Don't allow mixing pinned and unpinned tabs.

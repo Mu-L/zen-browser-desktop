@@ -24,7 +24,7 @@
     }
   }
 
-  MozXULElement.registerXULElement('zen-folder', ZenFolder);
+  customElements.define('zen-folder', ZenFolder);
 
   class ZenFolders extends ZenPreloadedFeature {
     init() {
@@ -161,7 +161,7 @@
 
     #onNewFolder(event) {
       const tabs = gBrowser.selectedTabs;
-      return this.createFolder(tabs);
+      this.createFolder(tabs);
     }
 
     createFolder(tabs, options = {}) {
@@ -187,7 +187,19 @@
       folder.label = label;
       folder.collapsed = !!options.collapsed;
       folder.pinned = true;
-      insertBefore.parentNode.insertBefore(folder, insertBefore);
+      folder.addTabs(tabs);
+      insertBefore.before(folder);
+
+      // Fixes bug1953801 and bug1954689
+      // Ensure that the tab state cache is updated immediately after creating
+      // a group. This is necessary because we consider group creation a
+      // deliberate user action indicating the tab has importance for the user.
+      // Without this, it is not possible to save and close a tab group with
+      // a short lifetime.
+      folder.tabs.forEach((tab) => {
+        gBrowser.TabStateFlusher.flush(tab.linkedBrowser);
+      });
+
       return folder;
     }
 
