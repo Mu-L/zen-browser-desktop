@@ -412,3 +412,29 @@ menuseparator {
   padding: 0 !important;
   min-width: unset !important;
 }
+
+#statuspanel {
+  &:not([hidden]) {
+    bottom: 6px;
+    left: 6px;
+  }
+
+  &:not([mirror]):-moz-locale-dir(rtl),
+  &[mirror]:-moz-locale-dir(ltr) {
+    left: auto;
+    right: 6px;
+  }
+
+  & #statuspanel-label {
+    background: color-mix(in srgb, var(--zen-colors-primary) 80%, #0f0f0f 20%) !important;
+    border-radius: 99px !important;
+    padding: 3px 7px;
+    font-weight: 600;
+    color: white;
+    border: none !important;
+    outline: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: small;
+    outline-offset: -1px;
+    box-shadow: 0 0 1px 1px rgba(0, 0, 0, 0.1);
+  }
+}
