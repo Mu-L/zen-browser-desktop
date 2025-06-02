@@ -42,11 +42,6 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
     this._resolveInitialized = resolve;
   });
 
-  workspaceIndicatorXUL = `
-    <hbox class="zen-current-workspace-indicator-icon"></hbox>
-    <hbox class="zen-current-workspace-indicator-name"></hbox>
-  `;
-
   async waitForPromises() {
     if (this.privateWindowOrDisabled) {
       return;
@@ -858,6 +853,9 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
         console.error('gZenWorkspaces: Error initializing theme picker', e);
       }
       this.onWindowResize();
+      if (window.gZenSessionStore) {
+        await gZenSessionStore.promiseInitialized;
+      }
       await this._selectStartPage();
       this._fixTabPositions();
       this._resolveInitialized();
@@ -915,7 +913,7 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
       ) {
         this.log(`Found tab to select: ${this._tabToSelect}, ${tabs.length}`);
         setTimeout(() => {
-          gBrowser.selectedTab = tabs[this._tabToSelect];
+          gBrowser.selectedTab = gZenGlanceManager.getTabOrGlanceParent(tabs[this._tabToSelect]);
           this._removedByStartupPage = true;
           gBrowser.removeTab(this._tabToRemoveForEmpty, {
             skipSessionStore: true,
@@ -2136,6 +2134,21 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
           repeat: 0,
         });
         essentialsContainer.parentNode.appendChild(essentialsClone);
+        for (let i = 0; i < essentialsClone.children.length; i++) {
+          const child = essentialsClone.children[i];
+          const originalChild = essentialsContainer.children[i];
+          if (!gBrowser.isTab(child) || !gBrowser.isTab(originalChild)) {
+            continue;
+          }
+          const childBg = child.querySelector('.tab-background');
+          const originalChildBg = originalChild.querySelector('.tab-background');
+          if (childBg && originalChildBg) {
+            childBg.style.setProperty(
+              '--zen-tab-icon',
+              originalChildBg.style.getPropertyValue('--zen-tab-icon')
+            );
+          }
+        }
       }
     }
     document.documentElement.setAttribute('animating-background', 'true');
@@ -2321,11 +2334,11 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
 
         const newTransform = `translateX(${newOffset}%)`;
         let existingTransform = `translateX(${existingOffset}%)`;
-        if (container.style.transform) {
+        if (container.style.transform && container.style.transform !== 'none') {
           existingTransform = container.style.transform;
         }
         if (shouldAnimate) {
-          container.style.transform = newTransform;
+          container.style.transform = existingTransform;
           animations.push(
             gZenUIManager.motion.animate(
               container,
@@ -2542,8 +2555,6 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
         })
       );
     }
-
-    setTimeout(gURLBar.formatValue.bind(gURLBar), 0);
   }
 
   async _fixCtrlTabBehavior() {
@@ -2941,6 +2952,9 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
   }
 
   _initializeWorkspaceTabContextMenus() {
+    if (this.privateWindowOrDisabled) {
+      return;
+    }
     const menu = document.createXULElement('menu');
     menu.setAttribute('id', 'context-zen-change-workspace-tab');
     menu.setAttribute('data-l10n-id', 'context-zen-change-workspace-tab');
@@ -3307,5 +3321,21 @@ var gZenWorkspaces = new (class extends ZenMultiWindowFeature {
         parent.scrollLeft = activeButton.offsetLeft;
       }
     });
+  }
+
+  fixTabInsertLocation(tab) {
+    if (tab.hasAttribute('zen-essential')) {
+      // Essential tabs should always be inserted at the end of the essentials section
+      const essentialsSection = this.getEssentialsSection(tab);
+      if (essentialsSection) {
+        essentialsSection.appendChild(tab);
+      }
+    } else if (tab.pinned) {
+      // Pinned tabs should always be inserted at the end of the pinned tabs container
+      const pinnedContainer = this.pinnedTabsContainer;
+      if (pinnedContainer) {
+        pinnedContainer.insertBefore(tab, pinnedContainer.lastChild);
+      }
+    }
   }
 })();

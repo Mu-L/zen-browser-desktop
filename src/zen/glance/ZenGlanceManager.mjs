@@ -1,3 +1,6 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {
   class ZenGlanceManager extends ZenDOMOperatedFeature {
     _animating = false;
@@ -151,8 +154,8 @@
       this.animatingOpen = true;
       this._animating = true;
 
-      const initialX = data.x;
-      const initialY = data.y;
+      const initialX = data.clientX;
+      const initialY = data.clientY;
       const initialWidth = data.width;
       const initialHeight = data.height;
 
@@ -594,8 +597,10 @@
           this.openGlance(
             {
               url: undefined,
-              x: browserRect.width / 2,
-              y: browserRect.height / 2,
+              ...(gZenUIManager._lastClickPosition || {
+                clientX: browserRect.width / 2,
+                clientY: browserRect.height / 2,
+              }),
               width: 0,
               height: 0,
             },
@@ -636,7 +641,12 @@
         .classList.remove('zen-glance-background');
       this.#currentParentTab._visuallySelected = false;
       this.hideSidebarButtons();
+      if (forSplit) {
+        this.finishOpeningGlance();
+        return;
+      }
       if (gReduceMotion || forSplit) {
+        gZenViewSplitter.deactivateCurrentSplitView();
         this.finishOpeningGlance();
         return;
       }
@@ -651,6 +661,7 @@
           type: 'spring',
         }
       );
+      gZenViewSplitter.deactivateCurrentSplitView();
       this.finishOpeningGlance();
     }
 
@@ -675,8 +686,8 @@
       const rect = event.target.getBoundingClientRect();
       const data = {
         url: event.target._placesNode.uri,
-        x: rect.left,
-        y: rect.top,
+        clientX: rect.left,
+        clientY: rect.top,
         width: rect.width,
         height: rect.height,
       };
@@ -705,8 +716,8 @@
     }
 
     getTabOrGlanceParent(tab) {
-      if (tab?.hasAttribute('glance-id')) {
-        const parentTab = this.#glances.get(tab.getAttribute('glance-id')).parentTab;
+      if (tab?.hasAttribute('glance-id') && this.#glances) {
+        const parentTab = this.#glances.get(tab.getAttribute('glance-id'))?.parentTab;
         if (parentTab) {
           return parentTab;
         }
@@ -734,29 +745,54 @@
       }
       return false;
     }
+
+    onSearchSelectCommand(where) {
+      if (where !== 'tab') {
+        return;
+      }
+      const currentTab = gBrowser.selectedTab;
+      const parentTab = currentTab.owner;
+      if (!parentTab || parentTab.hasAttribute('glance-id')) {
+        return;
+      }
+      // Open a new glance if the current tab is a glance tab
+      const browserRect = gBrowser.tabbox.getBoundingClientRect();
+      this.openGlance(
+        {
+          url: undefined,
+          ...(gZenUIManager._lastClickPosition || {
+            clientX: browserRect.width / 2,
+            clientY: browserRect.height / 2,
+          }),
+          width: 0,
+          height: 0,
+        },
+        currentTab,
+        parentTab
+      );
+    }
   }
 
   window.gZenGlanceManager = new ZenGlanceManager();
 
   function registerWindowActors() {
-    if (Services.prefs.getBoolPref('zen.glance.enabled', true)) {
-      gZenActorsManager.addJSWindowActor('ZenGlance', {
-        parent: {
-          esModuleURI: 'chrome://browser/content/zen-components/actors/ZenGlanceParent.sys.mjs',
-        },
-        child: {
-          esModuleURI: 'chrome://browser/content/zen-components/actors/ZenGlanceChild.sys.mjs',
-          events: {
-            DOMContentLoaded: {},
-            keydown: {
-              capture: true,
-            },
+    gZenActorsManager.addJSWindowActor('ZenGlance', {
+      parent: {
+        esModuleURI: 'resource:///actors/ZenGlanceParent.sys.mjs',
+      },
+      child: {
+        esModuleURI: 'resource:///actors/ZenGlanceChild.sys.mjs',
+        events: {
+          DOMContentLoaded: {},
+          keydown: {
+            capture: true,
           },
         },
-        allFrames: true,
-        matches: ['*://*/*'],
-      });
-    }
+      },
+      allFrames: true,
+      matches: ['*://*/*'],
+      enablePreference: 'zen.glance.enabled',
+    });
   }
 
   registerWindowActors();

@@ -1,3 +1,6 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {
   const lazy = {};
 
@@ -87,18 +90,12 @@
 
     onTabIconChanged(tab, url = null) {
       const iconUrl = url ?? tab.iconImage.src;
-      if (!iconUrl) {
+      if (!iconUrl && tab.hasAttribute('zen-pin-id')) {
         try {
           setTimeout(async () => {
-            try {
-              let favicon = await PlacesUtils.favicons.getFaviconForPage(
-                Services.io.newURI(pin.url)
-              );
-              if (favicon) {
-                gBrowser.setIcon(tab, favicon.dataURI);
-              }
-            } catch (error) {
-              console.warn('Error getting favicon URL:', error);
+            const favicon = await this.getFaviconAsBase64(tab.linkedBrowser.currentURI);
+            if (favicon) {
+              gBrowser.setIcon(tab, favicon);
             }
           });
         } catch {}
@@ -156,6 +153,9 @@
       await gZenWorkspaces.promiseSectionsInitialized;
       await this._initializePinsCache();
       await this._initializePinnedTabs(init);
+      if (init) {
+        this._resolveInitializedPinnedCache();
+      }
     }
 
     async _initializePinsCache() {
@@ -624,7 +624,7 @@
         // Remove everything except the entry we want to keep
         state.entries = [state.entries[foundEntryIndex]];
       }
-      state.image = pin.iconUrl || null;
+      state.image ||= pin.iconUrl || null;
       state.index = 0;
 
       SessionStore.setTabState(tab, state);
@@ -641,8 +641,7 @@
         return faviconData.dataURI;
       } catch (ex) {
         console.error('Failed to get favicon:', ex);
-        // console.error("Failed to get favicon:", ex);
-        return `page-icon:${pageUrl}`; // Use this as a fallback
+        return null;
       }
     }
 
@@ -659,7 +658,7 @@
       for (let i = 0; i < tabs.length; i++) {
         let tab = tabs[i];
         const section = gZenWorkspaces.getEssentialsSection(tab);
-        if (section.children.length >= this.MAX_ESSENTIALS_TABS) {
+        if (!this.canEssentialBeAdded(tab)) {
           movedAll = false;
           continue;
         }
@@ -766,19 +765,6 @@
       document.getElementById('context_pinTab')?.before(element);
     }
 
-    // TODO: remove this as it's not possible to know the base pinned url any more as it's now stored in tab state
-    resetPinnedTabData(tabData) {
-      if (
-        lazy.zenPinnedTabRestorePinnedTabsToPinnedUrl &&
-        tabData.pinned &&
-        tabData.zenPinnedEntry
-      ) {
-        tabData.entries = [JSON.parse(tabData.zenPinnedEntry)];
-        tabData.image = tabData.zenPinnedIcon;
-        tabData.index = 0;
-      }
-    }
-
     updatePinnedTabContextMenu(contextTab) {
       if (!this.enabled) {
         document.getElementById('context_pinTab').hidden = true;
@@ -791,7 +777,7 @@
       document.getElementById('context_zen-add-essential').hidden =
         contextTab.getAttribute('zen-essential') ||
         !!contextTab.group ||
-        gBrowser._numZenEssentials >= this.MAX_ESSENTIALS_TABS;
+        !this.canEssentialBeAdded(contextTab);
       document.getElementById('context_zen-remove-essential').hidden =
         !contextTab.getAttribute('zen-essential');
       document.getElementById('context_unpinTab').hidden =
@@ -943,7 +929,7 @@
       } else {
         tab.setAttribute('zen-pinned-changed', 'true');
       }
-      tab.style.setProperty('--zen-original-tab-icon', `url(${pin.iconUrl})`);
+      tab.style.setProperty('--zen-original-tab-icon', `url(${pin.iconUrl.spec})`);
     }
 
     removeTabContainersDragoverClass() {
@@ -1004,6 +990,16 @@
       }
     }
 
+    canEssentialBeAdded(tab) {
+      return (
+        !(
+          (tab.getAttribute('usercontextid') || 0) !=
+            gZenWorkspaces.getActiveWorkspaceFromCache().containerTabId &&
+          gZenWorkspaces.containerSpecificEssentials
+        ) && gBrowser._numZenEssentials < this.MAX_ESSENTIALS_TABS
+      );
+    }
+
     applyDragoverClass(event, draggedTab) {
       if (!this.enabled) {
         return;
@@ -1037,10 +1033,7 @@
           shouldAddDragOverElement = true;
         }
       } else if (essentialTabsTarget) {
-        if (
-          !draggedTab.hasAttribute('zen-essential') &&
-          gBrowser._numZenEssentials < this.MAX_ESSENTIALS_TABS
-        ) {
+        if (!draggedTab.hasAttribute('zen-essential') && this.canEssentialBeAdded(draggedTab)) {
           shouldAddDragOverElement = true;
           isVertical = false;
         }
@@ -1117,4 +1110,8 @@
   }
 
   window.gZenPinnedTabManager = new ZenPinnedTabManager();
+
+  gZenPinnedTabManager.promisePinnedCacheInitialized = new Promise((resolve) => {
+    gZenPinnedTabManager._resolveInitializedPinnedCache = resolve;
+  });
 }

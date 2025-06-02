@@ -1,5 +1,10 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {
   var ZenStartup = {
+    _watermarkIgnoreElements: ['zen-browser-background', 'zen-toast-container'],
+
     init() {
       this.openWatermark();
       this._initBrowserBackground();
@@ -104,9 +109,10 @@
     closeWatermark() {
       document.documentElement.removeAttribute('zen-before-loaded');
       if (Services.prefs.getBoolPref('zen.watermark.enabled', false)) {
+        let elementsToIgnore = this._watermarkIgnoreElements.map((id) => '#' + id).join(', ');
         gZenUIManager.motion
           .animate(
-            '#browser > *, #urlbar, #tabbrowser-tabbox > *',
+            '#browser > *:not(' + elementsToIgnore + '), #urlbar, #tabbrowser-tabbox > *',
             {
               opacity: [0, 1],
             },
