@@ -1,5 +1,5 @@
 diff --git a/browser/components/tabbrowser/content/tabgroup.js b/browser/components/tabbrowser/content/tabgroup.js
-index 6dc774ea335b0c5dba7dcf76cdb23728faae1343..f6a5742423342dec9394ce9d98011b5f388e5174 100644
+index 6dc774ea335b0c5dba7dcf76cdb23728faae1343..3872cef8158d391f56ec417382382bc641a859b8 100644
 --- a/browser/components/tabbrowser/content/tabgroup.js
 +++ b/browser/components/tabbrowser/content/tabgroup.js
 @@ -13,10 +13,13 @@
@@ -48,7 +48,7 @@ index 6dc774ea335b0c5dba7dcf76cdb23728faae1343..f6a5742423342dec9394ce9d98011b5f
              this.dispatchEvent(
                new CustomEvent("TabGroupRemoved", { bubbles: true })
              );
-@@ -275,7 +281,21 @@
+@@ -275,9 +281,23 @@
      }
  
      get tabs() {
@@ -61,22 +61,24 @@ index 6dc774ea335b0c5dba7dcf76cdb23728faae1343..f6a5742423342dec9394ce9d98011b5f
 +        }
 +      }
 +      return childs.filter(node => node.matches("tab"));
-+    }
-+
+     }
+ 
 +    get group() {
 +      if (gBrowser.isTabGroup(this.parentElement)) {
 +        return this.parentElement.parentElement;
 +      }
 +      return null;
-     }
- 
++     }
++
      /**
+      * @returns {MozTextLabel}
+      */
 @@ -301,7 +321,7 @@
       */
      addTabs(tabs, metricsContext) {
        for (let tab of tabs) {
 -        if (tab.pinned) {
-+        if (tab.pinned != this.pinned) {
++        if (tab.pinned !== this.pinned) {
            tab.ownerGlobal.gBrowser.unpinTab(tab);
          }
          let tabToMove =
