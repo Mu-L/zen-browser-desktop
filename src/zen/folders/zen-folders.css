@@ -201,12 +201,11 @@ zen-folder {
     }
 
     .tab-group-folder-icon {
-      width: 28px;
+      width: 30px;
       height: 28px;
       margin-inline-end: calc(var(--toolbarbutton-inner-padding) / 3) !important;
-      -moz-context-properties: fill, stroke, fill-opacity, stroke-opacity;
-      stroke: currentColor;
-      fill: var(--zen-colors-primary);
+      align-content: center;
+      pointer-events: none;
     }
 
     &:hover {

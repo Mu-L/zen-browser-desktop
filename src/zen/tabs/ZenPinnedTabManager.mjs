@@ -793,6 +793,7 @@
       if (!this.enabled) {
         return false;
       }
+      movingTabs = [...movingTabs];
       try {
         const pinnedTabsTarget =
           event.target.closest('.zen-workspace-pinned-tabs-section') ||
@@ -803,7 +804,7 @@
         // with the sub tabs
         for (let i = 0; i < movingTabs.length; i++) {
           const draggedTab = movingTabs[i];
-          if (draggedTab.classList.contains('tab-group-label')) {
+          if (gBrowser.isTabGroupLabel(draggedTab)) {
             const group = draggedTab.group;
             // remove label and add sub tabs to moving tabs
             if (group) {
@@ -1002,6 +1003,11 @@
 
     applyDragoverClass(event, draggedTab) {
       if (!this.enabled) {
+        return;
+      }
+      if (gBrowser.isTabGroupLabel(draggedTab)) {
+        // If the target is a tab group label, we don't want to apply the dragover class
+        this.removeTabContainersDragoverClass();
         return;
       }
       const pinnedTabsTarget = event.target.closest('.zen-workspace-pinned-tabs-section');

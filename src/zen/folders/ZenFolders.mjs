@@ -3,12 +3,62 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 {
   class ZenFolder extends MozTabbrowserTabGroup {
+    #initialized = false;
+
+    static rawIcon = new DOMParser().parseFromString(
+      `
+        <svg width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="-67.409 -14.145 29.279 28.92">
+          <defs>
+            <linearGradient gradientUnits="userSpaceOnUse" x1="-53.05" y1="-3.8" x2="-53.05" y2="8.998" id="gradient-1">
+              <stop offset="0" style="stop-color: rgb(255, 255, 255);"/>
+              <stop offset="1" style="stop-color: rgb(0% 0% 0%)"/>
+            </linearGradient>
+              <linearGradient gradientUnits="userSpaceOnUse" x1="-40.286" y1="-3.091" x2="-40.286" y2="13.31" id="gradient-0" gradientTransform="matrix(1, 0, 0, 1, -12.717999, -4.409)">
+              <stop offset="0" style="stop-color: rgb(255, 255, 255);"/>
+              <stop offset="1" style="stop-color: rgb(0% 0% 0%)"/>
+            </linearGradient>
+          </defs>
+          <path d="M -61.3 -5.25 C -61.3 -6.492 -60.293 -7.5 -59.05 -7.5 L -55.102 -7.5 C -54.591 -7.5 -54.096 -7.326 -53.697 -7.007 L -52.84 -6.321 C -52.175 -5.79 -51.349 -5.5 -50.498 -5.5 L -47.05 -5.5 C -45.807 -5.5 -44.8 -4.492 -44.8 -3.25 L -44.731 4.42 L -44.708 6.651 C -44.708 7.894 -45.715 8.901 -46.958 8.901 L -58.958 8.901 C -60.201 8.901 -61.208 7.894 -61.208 6.651 L -61.3 4.752 L -61.3 -5.25 Z" style="stroke-width: 1.25px; transform-box: fill-box; transform-origin: 50% 50%; fill: var(--zen-workspace-color-bg); stroke: currentColor;">
+            <animateTransform type="skewX" additive="sum" attributeName="transform" values="0;17" dur="0.4s" fill="freeze" keyTimes="0; 1" end="0.6s" max="0.6s" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="translate" additive="sum" attributeName="transform" values="0 0;-0.4 -0.2" dur="0.4s" keyTimes="0; 1" fill="freeze" end="0.6s" max="0.6s" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="scale" additive="sum" attributeName="transform" values="1 1;0.9 0.9" begin="0s" dur="0.4s" fill="freeze" keyTimes="0; 1" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+          </path>
+          <path d="M -61.3 -5.25 C -61.3 -6.492 -60.293 -7.5 -59.05 -7.5 L -55.102 -7.5 C -54.591 -7.5 -54.096 -7.326 -53.697 -7.007 L -52.84 -6.321 C -52.175 -5.79 -51.349 -5.5 -50.498 -5.5 L -47.05 -5.5 C -45.807 -5.5 -44.8 -4.492 -44.8 -3.25 L -44.731 4.42 L -44.708 6.651 C -44.708 7.894 -45.715 8.901 -46.958 8.901 L -58.958 8.901 C -60.201 8.901 -61.208 7.894 -61.208 6.651 L -61.3 4.752 L -61.3 -5.25 Z" style="stroke-width: 1.25; fill-opacity: 0.15; fill: url(&quot;#gradient-0&quot;); transform-origin: -53.004px 0.701px;">
+            <animateTransform type="skewX" additive="sum" attributeName="transform" values="0;17" dur="0.4s" fill="freeze" keyTimes="0; 1" end="0.6s" max="0.6s" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="translate" additive="sum" attributeName="transform" values="0 0;-0.4 -0.2" dur="0.4s" keyTimes="0; 1" fill="freeze" end="0.6s" max="0.6s" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="scale" additive="sum" attributeName="transform" values="1 1;0.9 0.9" begin="0s" dur="0.4s" fill="freeze" keyTimes="0; 1" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+          </path>
+          <rect x="-61.301" y="-3.768" width="16.5" height="12.798" rx="2.25" style="stroke-width: 1.25px; transform-box: fill-box; transform-origin: 50% 50%; fill: var(--zen-colors-primary); stroke: currentColor;" id="object-0">
+            <animateTransform type="skewX" additive="sum" attributeName="transform" values="0;-17" dur="0.4s" keyTimes="0; 1" max="0.6s" fill="freeze" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="translate" additive="sum" attributeName="transform" values="0 0;3 -0.5" dur="0.4s" fill="freeze" keyTimes="0; 1" max="0.6s" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="scale" additive="sum" attributeName="transform" values="1 1;0.9 0.9" begin="0s" dur="0.4s" fill="freeze" keyTimes="0; 1" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+          </rect>
+          <rect x="-61.3" y="-3.8" width="16.5" height="12.798" style="stroke-width: 1.25; fill-opacity: 0.15; transform-origin: -53.05px 2.599px; fill: url(&quot;#gradient-1&quot;);" id="rect-1" rx="2.25">
+            <animateTransform type="skewX" additive="sum" attributeName="transform" values="0;-17" dur="0.4s" keyTimes="0; 1" max="0.6s" fill="freeze" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="translate" additive="sum" attributeName="transform" values="0 0;3 -0.5" dur="0.4s" fill="freeze" keyTimes="0; 1" max="0.6s" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+            <animateTransform type="scale" additive="sum" attributeName="transform" values="1 1;0.9 0.9" dur="0.4s" fill="freeze" keyTimes="0; 1" calcMode="spline" keySplines="0.42 0 0.58 1"/>
+          </rect>
+        </svg>
+      `,
+      'image/svg+xml'
+    ).documentElement;
+
     constructor() {
       super();
     }
 
     connectedCallback() {
       super.connectedCallback();
+      if (this.#initialized) {
+        return;
+      }
+      this.#initialized = true;
+      this.icon.appendChild(ZenFolder.rawIcon.cloneNode(true));
+      this.labelElement.pinned = true;
+    }
+
+    get icon() {
+      return this.querySelector('.tab-group-folder-icon');
     }
 
     /**
@@ -190,8 +240,8 @@
       folder.label = label;
       folder.collapsed = !!options.collapsed;
       folder.pinned = true;
-      folder.addTabs(tabs);
       insertBefore.before(folder);
+      folder.addTabs(tabs);
 
       // Fixes bug1953801 and bug1954689
       // Ensure that the tab state cache is updated immediately after creating
@@ -203,6 +253,7 @@
         gBrowser.TabStateFlusher.flush(tab.linkedBrowser);
       });
 
+      this.#updateFolderIcon(folder, false);
       return folder;
     }
 
@@ -215,6 +266,7 @@
       let heightUntilSelected = 0;
       let selectedItem = null;
       let itemsAfterSelected = [];
+      animations.push(...this.#updateFolderIcon(group));
       for (const item of tabsContainer.children) {
         const rect = item.getBoundingClientRect();
         if (item.hasAttribute('visuallyselected')) {
@@ -247,6 +299,7 @@
       const groupStart = group.querySelector('.zen-tab-group-start');
       const animations = [];
       tabsContainer.style.overflow = 'hidden';
+      animations.push(...this.#updateFolderIcon(group));
       animations.push(
         gZenUIManager.motion.animate(
           groupStart,
@@ -261,6 +314,30 @@
       );
       await Promise.all(animations);
       tabsContainer.style.overflow = '';
+    }
+
+    #updateFolderIcon(group, actuallyAnimate = true) {
+      const svgElement = group.icon.querySelector('svg');
+      if (!svgElement) {
+        return;
+      }
+      const targetIsCollapsed = !group.collapsed;
+      const iconContainer = group.icon;
+      svgElement.querySelectorAll('animate, animateTransform, animateMotion').forEach((anim) => {
+        const v = anim.getAttribute('values');
+        if (v) {
+          const o = v.split(';');
+          if (o.length === 2) anim.setAttribute('values', `${o[1]};${o[0]}`);
+        }
+      });
+      iconContainer.innerHTML = '';
+      iconContainer.appendChild(svgElement);
+      if (!actuallyAnimate) {
+        svgElement.pauseAnimations();
+        svgElement.setCurrentTime(targetIsCollapsed ? 0 : 0.4);
+      }
+      iconContainer.dataset.iconIsCollapsed = String(targetIsCollapsed);
+      return [];
     }
   }
 
